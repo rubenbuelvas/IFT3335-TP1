@@ -1,0 +1,31 @@
+#+TITLE: TP1: Jeu de Sudoku - rapport\\ 
+
+#+SUBTITLE: Cours:  IFT3335 - H21\\
+#+SUBTITLE: Professeur : Jian Yun Nie\\
+
+#+AUTHOR: Rubén Camilo Buelvas Villa - MATRICULE\\
+#+AUTHOR: Alice Dorion - 20091504\\
+#+AUTHOR: David Godbout - MATRICULE\\
+
+#+DATE:Pour le 17 mars 2021 à 23:59
+#+LATEX_CLASS: article
+#+LATEX_CLASS_OPTIONS:[titlepage]
+#+LATEX_HEADER: \usepackage[margin=1.5in]{geometry}
+#+LATEX_HEADER: \setlength{\parindent}{15pt}
+#+OPTIONS: toc:nil
+
+
+
+* TODO introduction : brief description of the work realised
+
+
+* TODO choice of heuristics for Q3
+
+
+* TODO comparison of different methods in terms of performance
++ indicate how to run each algorithm
+
+
+
+
+

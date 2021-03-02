@@ -118,9 +118,20 @@ def search(values):
     if all(len(values[s]) == 1 for s in squares):
         return values ## Solved!
     ## Chose the unfilled square s with the fewest possibilities
-    n,s = min((len(values[s]), s) for s in squares if len(values[s]) > 1)
+    #n,s = min((len(values[s]), s) for s in squares if len(values[s]) > 1)
+
+    #choose a random unfilled square 
+    s = random.choice(squares)
+    while len(values[s]) == 1:
+        s = random.choice(squares)
+
+    # try possible numbers for s in random order
     return some(search(assign(values.copy(), s, d))
-                for d in values[s])
+                for d in shuffled(values[s]))
+
+    #return some(search(assign(values.copy(), s, d))
+                #for d in values[s])
+
 
 ################ Utilities ################
 
@@ -189,12 +200,12 @@ hard1  = '.....6....59.....82....8....45........3........6..3.54...325..6.......
     
 if __name__ == '__main__':
     test()
-    solve_all(from_file("top95.txt"), "95sudoku", None)
+    #solve_all(from_file("top95.txt"), "95sudoku", None)
     # solve_all(from_file("easy50.txt", '========'), "easy", None)
     # solve_all(from_file("easy50.txt", '========'), "easy", None)
     # solve_all(from_file("top95.txt"), "hard", None)
     # solve_all(from_file("hardest.txt"), "hardest", None)
-    # solve_all([random_puzzle() for _ in range(99)], "random", 100.0)
+    solve_all([random_puzzle() for _ in range(99)], "random", 100.0)
 
 ## References used:
 ## http://www.scanraid.com/BasicStrategies.htm
