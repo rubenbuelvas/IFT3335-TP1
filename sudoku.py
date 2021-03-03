@@ -56,7 +56,7 @@ def parse_grid(grid):
     return values
 
 def grid_values(grid):
-    "Convert grid into a dict of {square: char} with '0' or '.' for empties."
+    """Convert grid into a dict of {square: char} with '0' or '.' for empties."""
     chars = [c for c in grid if c in digits or c in '0.']
     assert len(chars) == 81
     return dict(zip(squares, chars))
@@ -99,12 +99,12 @@ def eliminate(values, s, d):
 ################ Display as 2-D grid ################
 
 def display(values):
-    "Display these values as a 2-D grid."
+    """Display these values as a 2-D grid."""
     width = 1+max(len(values[s]) for s in squares)
     line = '+'.join(['-'*(width*3)]*3)
-    for r in rows:
-        print (''.join(values[r+c].center(width)+('|' if c in '36' else ''))
-                      for c in cols)
+    for r in rows: 
+        print (''.join(values[r+c].center(width)+('|' if c in '36' else '')
+                      for c in cols))
         if r in 'CF': print(line)
 
 ################ Search ################
@@ -112,7 +112,7 @@ def display(values):
 def solve(grid): return search(parse_grid(grid))
 
 def search(values):
-    "Using depth-first search and propagation, try all possible values."
+    """Using depth-first search and propagation, try all possible values."""
     if values is False:
         return False ## Failed earlier
     if all(len(values[s]) == 1 for s in squares):
@@ -165,6 +165,8 @@ def solve_all(grids, name='', showif=0.0):
         values = solve(grid)
         t = time.process_time()-start
         ## Display puzzles that take long enough
+        display(grid_values(grid))
+        if values: display(values)
         if showif is not None and t > showif:
             display(grid_values(grid))
             if values: display(values)
@@ -203,10 +205,11 @@ if __name__ == '__main__':
     #solve_all(from_file("top95.txt"), "95sudoku", None)
     # solve_all(from_file("easy50.txt", '========'), "easy", None)
     # solve_all(from_file("easy50.txt", '========'), "easy", None)
-    # solve_all(from_file("top95.txt"), "hard", None)
-    # solve_all(from_file("hardest.txt"), "hardest", None)
-    solve_all([random_puzzle() for _ in range(99)], "random", 100.0)
-
+    #solve_all(from_file("top95.txt"), "hard", None)
+    #solve_all(from_file("hardest.txt"), "hardest", None)
+    #solve_all([random_puzzle() for _ in range(99)], "random", 100.0)
+    
+    
 ## References used:
 ## http://www.scanraid.com/BasicStrategies.htm
 ## http://www.sudokudragon.com/sudokustrategy.htm
