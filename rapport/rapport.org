@@ -3,9 +3,9 @@
 #+SUBTITLE: Cours:  IFT3335 - H21\\
 #+SUBTITLE: Professeur : Jian Yun Nie\\
 
-#+AUTHOR: Rubén Camilo Buelvas Villa - MATRICULE \\
-#+AUTHOR: Alice Dorion - 20091504 \\
-#+AUTHOR: David Godbout - 20206470 \\
+#+AUTHOR: Rubén Camilo Buelvas Villa - MATRICULE\\
+#+AUTHOR: Alice Dorion - 20091504\\
+#+AUTHOR: David Godbout - 20206470\\
 
 #+DATE:Pour le 17 mars 2021 à 23:59
 #+LATEX_CLASS: article
