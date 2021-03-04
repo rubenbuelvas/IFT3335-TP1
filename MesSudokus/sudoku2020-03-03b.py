@@ -126,7 +126,7 @@ def display(values):
 def solve(grid, searchMethod):
     return search(parse_grid(grid), searchMethod)
 
-def findbettersquarewithpairsandtriples(s, values, printwhenfound=True): #DGNEW    <--------------- THIS CODE CAN BE OPTIMIZED
+def findbettersquarewithpairsandtriplesOLD(s, values, printwhenfound=True): #DGNEW    <--------------- THIS CODE CAN BE OPTIMIZED
     """Will use naked pairs in order to identify a better square to use if possible.
        Inspired by https://www.sudokuoftheday.com/techniques/naked-pairs-triples/"""
 
@@ -136,13 +136,16 @@ def findbettersquarewithpairsandtriples(s, values, printwhenfound=True): #DGNEW 
                                     # ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'],
                                     # ['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3']]
 
+    if not (len(values[s]) == 2): #Only looks for pairs for now
+        return None, None
+
     #Look for other square with the same values within a unit
     for unit in units[s]: #Will loop through the 3 units tied to the square
         for square_in_same_unit in unit: #We could optimize here and avoid looking at squares with only one possible value
             # Looks for pairs
             if (len(values[s]) == 2) and (square_in_same_unit != s) and values[square_in_same_unit] == values[s]: # a naked pair is found
-                if printwhenfound:
-                    print(f"Naked pair ''{values[s]}'' found for squares {s} and {square_in_same_unit}")
+                #if printwhenfound:
+                #    print(f"Naked pair ''{values[s]}'' found for squares {s} and {square_in_same_unit}")
 
                 #Since a naked pair is found, we can remove the two digits from this pair in all other squares in this unit to see if we solve a square
                 listofsquarestoreview = unit.copy()
@@ -150,16 +153,58 @@ def findbettersquarewithpairsandtriples(s, values, printwhenfound=True): #DGNEW 
                 listofsquarestoreview.remove(square_in_same_unit)
                 for s2 in listofsquarestoreview:
                     numberofvaluesinitial = len(values[s2])
-                    newvalue = re.sub(values[s], '', values[s2]) #DG removes the values of the naked pair from the values of s2 (square to review)
-                    numberofvaluesfinal = len(newvalue)
+                    possibledigits = re.sub(values[s], '', values[s2]) #DG removes the values of the naked pair from the values of s2 (square to review)
+                    numberofvaluesfinal = len(possibledigits)
                     #print(f"Found square {s2} with value {newvalue} because of naked pair ''{values[s]}'' found for squares {s} and {square_in_same_unit}")
                     if (numberofvaluesfinal < numberofvaluesinitial) and (numberofvaluesfinal == 1): #DG we solved a square because of the naked pair, which makes it a better candidate
                         countnakedimprovements += 1  # Number of naked pairs or triples found
                         if printwhenfound:
-                            print(f"Solved square {s2} with value {newvalue} because of naked pair ''{values[s]}'' found for squares {s} and {square_in_same_unit}")
-                        return s2, newvalue
-                break # NOT SURE WE NEED A BREAK HERE. We found a naked pair, but it doesn't mean it will solve a square
-    return None, None
+                            print(f"Solved square {s2} with possible digits {possibledigits} because of naked pair ''{values[s]}'' found for squares {s} and {square_in_same_unit}")
+                            values[s2] = possibledigits #DG update the possibilities for s2. In this case, only one possibilily
+                        return s2, possibledigits
+                #break # NOT SURE WE NEED A BREAK HERE. We found a naked pair, but it doesn't mean it will solve another square
+    return None, None # No better square found
+
+def findbettersquarewithpairsandtriples(values_in, printwhenfound=True): #DGNEW    <--------------- THIS CODE CAN BE OPTIMIZED
+    """Will use naked pairs in order to identify a better square to use if possible.
+       Inspired by https://www.sudokuoftheday.com/techniques/naked-pairs-triples/"""
+
+    global countnakedimprovements #Ensures the use of the global variable
+
+    #Reminder: assert units['C2'] == [['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2', 'I2'],
+                                    # ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'],
+                                    # ['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3']]
+
+    values_pairs = filterTheDict(values_in, lambda elem: len(elem[1]) == 2) #Only the keys with 2 digits
+    #print(values_pairs) #DGTEMP
+
+    #Will loop through all the keys with 2 digits in order to search for naked pairs
+    for s in values_pairs:
+        #Look for other square with the same values within a unit
+        for unit in units[s]: #Will loop through the 3 units tied to the square
+            for square_in_same_unit in unit: #We could optimize here and avoid looking at squares with only one possible value
+                # Looks for pairs
+                if (len(values_in[s]) == 2) and (square_in_same_unit != s) and values_in[square_in_same_unit] == values_in[s]: # a naked pair is found
+                    #if printwhenfound:
+                    #    print(f"Naked pair ''{values[s]}'' found for squares {s} and {square_in_same_unit}")
+
+                    #Since a naked pair is found, we can remove the two digits from this pair in all other squares in this unit to see if we solve a square
+                    listofsquarestoreview = unit.copy()
+                    listofsquarestoreview.remove(s)
+                    listofsquarestoreview.remove(square_in_same_unit)
+                    for s2 in listofsquarestoreview:
+                        numberofvaluesinitial = len(values_in[s2])
+                        possibledigits = re.sub(values_in[s], '', values_in[s2]) #DG removes the values of the naked pair from the values of s2 (square to review)
+                        numberofvaluesfinal = len(possibledigits)
+                        #print(f"Found square {s2} with value {newvalue} because of naked pair ''{values[s]}'' found for squares {s} and {square_in_same_unit}")
+                        if (numberofvaluesfinal < numberofvaluesinitial) and (numberofvaluesfinal == 1): #DG we solved a square because of the naked pair, which makes it a better candidate
+                            countnakedimprovements += 1  # Number of naked pairs or triples found
+                            if printwhenfound:
+                                print(f"Solved square {s2} with possible digits {possibledigits} because of naked pair ''{values_in[s]}'' found for squares {s} and {square_in_same_unit}")
+                                values_in[s2] = possibledigits #DG update the possibilities for s2. In this case, only one possibilily
+                            return s2, possibledigits
+                    #break # NOT SURE WE NEED A BREAK HERE. We found a naked pair, but it doesn't mean it will solve another square
+    return None, None # No better square found
 
 def search(values, searchMethod):
     """Using depth-first search and propagation, try all possible values."""
@@ -185,13 +230,26 @@ def search(values, searchMethod):
         ## Chose the unfilled square s with the fewest possibilities
         n, s = min((len(values[s]), s) for s in squares if len(values[s]) > 1) #n is the number of possible values for this square
     elif searchMethod == 'Norvig Improved':
+        s2, possibledigits = findbettersquarewithpairsandtriples(values, False) #DGHERE Will identify Naked Pairs/Triples in order to select a better value
+        if s2: # If a better square is found (s2), will use it
+            valuesnew = values.copy() #DGSCRAP
+            valuesnew[s2] = possibledigits
+            #print(f"Better square found: {s2} with possibledigits={valuesnew[s2]}") # DGTEMP
+            return some(search(assign(valuesnew, s2, d), searchMethod)
+                        for d in possibledigits) #DG uses values2, which is a result with less options than values for square s2
+
+        #DG if no better square found, will take the Norvig Heuristic
         n, s = min((len(values[s]), s) for s in squares if len(values[s]) > 1) #n is the number of possible values for this square
 
-        s2, values2 = findbettersquarewithpairsandtriples(s, values, False) #DGHERE Will identify Naked Pairs/Triples in order to select a better value
-        if s2: # If a better square is found (s2), will use it
-            #print(f"Better square found: {s2}") # DGTEMP
-            return some(search(assign(values.copy(), s2, d), searchMethod)
-                        for d in shuffled(values[s2]))
+        # s2, possibledigits = findbettersquarewithpairsandtriples(values, False) #DGHERE Will identify Naked Pairs/Triples in order to select a better value
+        # if s2: # If a better square is found (s2), will use it
+        #     #d2 = some(d for d in values2) #DGTEMP
+        #     #print(f"Better square found: {s2} with possibledigits={possibledigits} and d2={d2}") # DGTEMP
+        #     valuesnew = values.copy() #DGSCRAP
+        #     valuesnew[s2] = possibledigits
+        #     #print(f"Better square found: {s2} with possibledigits={valuesnew[s2]}") # DGTEMP
+        #     return some(search(assign(valuesnew.copy(), s2, d), searchMethod)
+        #                 for d in possibledigits) #DG uses values2, which is a result with less options than values for square s2
     else:
         raise ValueError(f"Search method {searchMethod} not implemented")
     #DGNEW CODE STOP ---------------------------------------------------
