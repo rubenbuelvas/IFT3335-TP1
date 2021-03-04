@@ -7,7 +7,3 @@ Function solve_all:
 - Debugged when time was 0.0 (division by zero error)
 
 Coded a heuristic called findbettersquarewithpairsandtriples but still unsure about efficiency (found only 145 optimizations)
-
-def findbettersquarewithpairsandtriples(s, values, printwhenfound=True): #DGNEW    <--------------- THIS CODE CAN BE OPTIMIZED
-    """Will use naked pairs in order to identify a better square to use if possible.
-       Inspired by https://www.sudokuoftheday.com/techniques/naked-pairs-triples/"""
