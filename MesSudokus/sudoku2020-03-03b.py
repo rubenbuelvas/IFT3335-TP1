@@ -232,11 +232,12 @@ def search(values, searchMethod):
     elif searchMethod == 'Norvig Improved':
         s2, possibledigits = findbettersquarewithpairsandtriples(values, False) #DGHERE Will identify Naked Pairs/Triples in order to select a better value
         if s2: # If a better square is found (s2), will use it
-            valuesnew = values.copy() #DGSCRAP
+            valuesnew = values.copy()
             valuesnew[s2] = possibledigits
             #print(f"Better square found: {s2} with possibledigits={valuesnew[s2]}") # DGTEMP
-            return some(search(assign(valuesnew, s2, d), searchMethod)
-                        for d in possibledigits) #DG uses values2, which is a result with less options than values for square s2
+            return search(assign(valuesnew, s2, possibledigits), searchMethod) #DGREVIEW We assign the value to s2 for Naked pair. But values aren't updated permanently
+            #return some(search(assign(valuesnew, s2, d), searchMethod)
+            #            for d in possibledigits) #DG uses values2, which is a result with less options than values for square s2
 
         #DG if no better square found, will take the Norvig Heuristic
         n, s = min((len(values[s]), s) for s in squares if len(values[s]) > 1) #n is the number of possible values for this square
@@ -256,7 +257,7 @@ def search(values, searchMethod):
 
     # try possible numbers for s in random order
     return some(search(assign(values.copy(), s, d), searchMethod)
-                for d in shuffled(values[s]))
+                for d in shuffled(values[s])) #DG for d in values[s]) if we want to get rid of the random aspect of shuffled and always follow the same path
 
 ################ Utilities ################
 
