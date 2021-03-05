@@ -31,6 +31,12 @@ global counttotalsearches, countnakedimprovements
 counttotalsearches = 0
 countnakedimprovements = 0 #Number of naked pairs or triples found
 
+#Text color management
+from colorama import Fore, Back, Style #DGREVIEW
+colorBrightGreenOnBlack = "\033[1;32;40m" #DG from https://ozzmaker.com/add-colour-to-text-in-python/
+# print(Fore.BLUE + displaystring) #DGTEMP
+# print("\033[1;32;40m Bright Green on black  \033[1;31;43m Red on yellow \033[1;34;42m Blue on green \033[1;37;40m") #DGTEMP
+
 ################ Unit Tests ################
 def test():
     "A set of tests that must pass."
@@ -63,15 +69,33 @@ def grid_values(grid):
     assert len(chars) == 81
     return dict(zip(squares, chars))
 
+################ Constraint Propagation ################ #DGTEMP Should we call this differently?
+def assign(values, s, d):
+
+
 ################ Display as 2-D grid ################
-def displaygrid(grid):
-    """Display these values as a 2-D grid."""
-    width = 1+max(len(grid[i]) for i in range(80))
+def displaygrid(initialgrid, currentgrid, showconflicts=True):
+    """Display these values as a 2-D grid. If only display a initialgrid, you can pass currentgrid = initialgrid"""
+    width = 3 # No need to display the possible values
     line = '+'.join(['-'*(width*3)]*3)
+    i = 0 #the position between 0 and 80 of the square in the 9x9 grid
+
+    displaystring = ''
     for r in rows:
-        print (''.join(grid[1].center(width)+('|' if c in '36' else '') #DGHERE MUST REMOVE the 1
-                      for c in cols))
-        if r in 'CF': print(line)
+        for c in cols:
+            displaystring += (Back.BLACK if initialgrid[i] != '.' else Style.RESET_ALL) #DG will highlight numbers from initial grid
+            displaystring += ' ' + currentgrid[i] + ' '
+            displaystring += Style.RESET_ALL +  ('|' if c in '36' else '') + ('\n' if c in '9' else '') #display for a column
+            i += 1
+        if r in 'CF': displaystring = displaystring + line + '\n'
+
+    print(displaystring)
+    print(currentgrid)  # DGTEMP
+
+        #print (''.join(grid[i].center(width)+('|' if c in '36' else '') #DGHERE MUST REMOVE the 1
+        #              for c in cols))
+        #i += 1
+        #if r in 'CF': print(line)
 
 # def display(values):
 #     """Display these values as a 2-D grid."""
@@ -115,11 +139,12 @@ def filterTheDict(dictObj, callback): #DGTEMP - Not useful anymore
 ################ Main routine ################
 if __name__ == '__main__':
     test()
-    grid2 = '4.....8.5' + '.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......' #DGSCRAP
+    grid2 = '4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......' #DGSCRAP
+    gridSCRAP = '4551158.5.3..........7..111.2.....6.....8.4......1..222..6.3.7.5..2.....1.4......'  # DGSCRAP
     print(f"grid_values(grid2)={grid_values(grid2)}")
-    displaygrid(grid2)
+    displaygrid(grid2, gridSCRAP)
     #print(f"parse_grid(grid2)={parse_grid(grid2)}")
-    print('Must remove #DGSCRAP')
+    print('Must remove #DGSCRAP + rule for color management + SHOWCONFLICTS')
 
 ## References used:
 ## http://www.scanraid.com/BasicStrategies.htm
