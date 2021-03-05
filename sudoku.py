@@ -1,6 +1,8 @@
+
 ## Solve Every Sudoku Puzzle
 
 ## See http://norvig.com/sudoku.html
+
 
 ## Throughout this program we have:
 ##   r is a row,    e.g. 'A'
@@ -10,6 +12,9 @@
 ##   u is a unit,   e.g. ['A1','B1','C1','D1','E1','F1','G1','H1','I1']
 ##   grid is a grid,e.g. 81 non-blank chars, e.g. starting with '.18...7...
 ##   values is a dict of possible values, e.g. {'A1':'12349', 'A2':'8', ...}
+
+import argparse
+
 
 def cross(A, B):
     "Cross product of elements in A and elements in B."
@@ -26,6 +31,8 @@ units = dict((s, [u for u in unitlist if s in u])
              for s in squares)
 peers = dict((s, set(sum(units[s],[]))-set([s]))
              for s in squares)
+
+args = None #to be initialized with some values
 
 ################ Unit Tests ################
 
@@ -111,26 +118,75 @@ def display(values):
 
 def solve(grid): return search(parse_grid(grid))
 
-def search(values):
+def search(values, heuristics='random'):
     """Using depth-first search and propagation, try all possible values."""
     if values is False:
         return False ## Failed earlier
     if all(len(values[s]) == 1 for s in squares):
         return values ## Solved!
-    ## Chose the unfilled square s with the fewest possibilities
-    #n,s = min((len(values[s]), s) for s in squares if len(values[s]) > 1)
 
-    #choose a random unfilled square 
-    s = random.choice(squares)
-    while len(values[s]) == 1:
-        s = random.choice(squares)
+
+    if (args.heuristic == 'random'):
+        s = random_square(values)
+    elif (args.heuristic == 'norwig'):
+        s = norwig(values)
+    elif (args.heuristic == 'naked_pairs'):
+        s = naked_pairs(values)
+        
+    #else raise ValueError
 
     # try possible numbers for s in random order
     return some(search(assign(values.copy(), s, d))
                 for d in shuffled(values[s]))
-
     #return some(search(assign(values.copy(), s, d))
                 #for d in values[s])
+
+                
+def random_square(values):
+    """choose a random unfilled square"""
+    s = random.choice(squares)
+    while len(values[s]) == 1:
+        s = random.choice(squares)
+    return s
+
+
+def norwig(values):
+    """Choose the unfilled square s with the fewest possibilities"""
+    n,s = min((len(values[s]), s) for s in squares if len(values[s]) > 1)
+
+    return s
+
+
+def naked_pairs(values):
+    """choose a square belonging to naked pairs.
+    If no naked pairs are found, use norwig"""
+    #all squares having two candidate digits
+    two_digits = {s:d for s,d in values.items() if len(d) == 2}
+    while(two_digits):
+        #pick a square. if any of its peers has the same 2 digits, it's a naked pair
+        s,d = two_digits.popitem()
+        if any({k:v for k,v in two_digits.items() if v==d and k in peers[s]}) :
+            return s
+   
+    return norwig(values)
+
+"""
+def naked_pairs2(values):
+    "Naked pairs with elimination.
+    Choose a square belonging to naked pairs.
+    If no naked pairs are found, use norwig"
+    #if a square has two candidates, check if it forms naked pair with a peer
+    for s,v in {s:v for s,v in values.items() if len(v) == 2}.items():
+        for u in units[s]:
+            for p in u: 
+                if values[p] == v and p != s:
+                    for o in set(set(u)-set([s, p])):
+                        eliminate(values, o, v[0]) 
+                        eliminate(values, o, v[1])
+                        return s
+
+    return norwig(values)
+"""
 
 
 ################ Utilities ################
@@ -155,24 +211,27 @@ def shuffled(seq):
 
 import time, random
 
+
+
 def solve_all(grids, name='', showif=0.0):
     """Attempt to solve a sequence of grids. Report results.
     When showif is a number of seconds, display puzzles that take longer.
     When showif is None, don't display any puzzles."""
+ 
     def time_solve(grid):
         #start = time.clock()
         start = time.process_time()
         values = solve(grid)
         t = time.process_time()-start
         ## Display puzzles that take long enough
-        display(grid_values(grid))
-        if values: display(values)
         if showif is not None and t > showif:
             display(grid_values(grid))
+            print("\n")
             if values: display(values)
             print ('(%.2f seconds)\n' % t)
         return (t, solved(values))
     times, results = zip(*[time_solve(grid) for grid in grids])
+    
     N = len(grids)
     if N > 1:
         print ("Solved %d of %d %s puzzles (avg %.2f secs (%d Hz), max %.2f secs)." % (
@@ -199,15 +258,22 @@ def random_puzzle(N=17):
 grid1  = '003020600900305001001806400008102900700000008006708200002609500800203009005010300'
 grid2  = '4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......'
 hard1  = '.....6....59.....82....8....45........3........6..3.54...325..6..................'
+
     
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('heuristic', choices=['random', 'norwig', 'naked_pairs'], default='random', help='choice of heuristics fonction')
+    args = parser.parse_args()
+    
     test()
-    #solve_all(from_file("top95.txt"), "95sudoku", None)
+    solve_all(from_file("top95.txt"), "95sudoku", 0.1)
     # solve_all(from_file("easy50.txt", '========'), "easy", None)
-    # solve_all(from_file("easy50.txt", '========'), "easy", None)
+    #solve_all(from_file("easy50.txt", '========'), "easy", None)
     #solve_all(from_file("top95.txt"), "hard", None)
     #solve_all(from_file("hardest.txt"), "hardest", None)
     #solve_all([random_puzzle() for _ in range(99)], "random", 100.0)
+    #solve_all(from_file("10_5sudoku.txt"),"", None)
+    #solve_all(from_file("test.txt"), "hard", None)
     
     
 ## References used:
