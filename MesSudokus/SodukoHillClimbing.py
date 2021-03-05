@@ -13,32 +13,37 @@
 
 ##   values is a dict of possible values, e.g. {'A1':'12349', 'A2':'8', ...} #DGSCRAP
 
-import re #DG Will be used for substring removal
+import re  # DG Will be used for substring removal
+
 
 def cross(A, B):
     "Cross product of elements in A and elements in B."
-    return [a+b for a in A for b in B]
+    return [a + b for a in A for b in B]
 
-digits   = '123456789'
-rows     = 'ABCDEFGHI'
-cols     = digits
-squares  = cross(rows, cols)
+
+digits = '123456789'
+rows = 'ABCDEFGHI'
+cols = digits
+squares = cross(rows, cols)
 unitlist = ([cross(rows, c) for c in cols] +
             [cross(r, cols) for r in rows] +
-            [cross(rs, cs) for rs in ('ABC','DEF','GHI') for cs in ('123','456','789')])
+            [cross(rs, cs) for rs in ('ABC', 'DEF', 'GHI') for cs in ('123', '456', '789')])
 units = dict((s, [u for u in unitlist if s in u])
              for s in squares)
-peers = dict((s, set(sum(units[s],[]))-set([s]))
+peers = dict((s, set(sum(units[s], [])) - set([s]))
              for s in squares)
 
 global counttotalsearches, countnakedimprovements, emptydigits
 counttotalsearches = 0
-countnakedimprovements = 0 #Number of naked pairs or triples found
+countnakedimprovements = 0  # Number of naked pairs or triples found
 emptydigits = '0.'
 
-#Text color management
-from colorama import Fore, Back, Style #DGREVIEW
-colorBrightGreenOnBlack = "\033[1;32;40m" #DG from https://ozzmaker.com/add-colour-to-text-in-python/
+# Text color management
+from colorama import Fore, Back, Style  # DGREVIEW
+
+colorBrightGreenOnBlack = "\033[1;32;40m"  # DG from https://ozzmaker.com/add-colour-to-text-in-python/
+
+
 # print(Fore.BLUE + displaystring) #DGTEMP
 # print("\033[1;32;40m Bright Green on black  \033[1;31;43m Red on yellow \033[1;34;42m Blue on green \033[1;37;40m") #DGTEMP
 
@@ -55,7 +60,8 @@ def test():
     assert peers['C2'] == set(['A2', 'B2', 'D2', 'E2', 'F2', 'G2', 'H2', 'I2',
                                'C1', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9',
                                'A1', 'A3', 'B1', 'B3'])
-    print ('All tests pass.')
+    print('All tests pass.')
+
 
 ################ Parse a Grid ################
 # def parse_grid(grid):
@@ -69,14 +75,15 @@ def test():
 #     return values
 
 def grid_values(grid):
-    """Convert grid into a dict of {square: char} with '0' or '.' for empties.""" #DG example: {'A1': '4', 'A2': '.', 'A3': '.', 'A4': '.', 'A5': '.', 'A6': '.', 'A7': '8', 'A8': '.', 'A9': ...
+    """Convert grid into a dict of {square: char} with '0' or '.' for empties."""  # DG example: {'A1': '4', 'A2': '.', 'A3': '.', 'A4': '.', 'A5': '.', 'A6': '.', 'A7': '8', 'A8': '.', 'A9': ...
     chars = [c for c in grid if c in digits or c in '0.']
     assert len(chars) == 81
     return dict(zip(squares, chars))
 
+
 ################ Constraint Propagation ################ #DGTEMP Should we call this differently?
-#def assigndigit(grid, s, d)
-#"""Will return a new grid with the digit added in the specified square, and  ."""
+# def assigndigit(grid, s, d)
+# """Will return a new grid with the digit added in the specified square, and  ."""
 #    newgrid
 
 def fillgridrandomly(initialgrid):
@@ -84,75 +91,75 @@ def fillgridrandomly(initialgrid):
     # Reminder:   units['C2'] == [['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2', 'I2'], #column
     #                             ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'], #line
     #                             ['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3']] #unit 3x3
-    initialgridvalues = grid_values(initialgrid) # dictionnary of initial values. Ex: {'A1': '4', 'A2': '.', 'A3': '.', 'A4': '.', 'A5': '.', 'A6': '.', 'A7': '8', 'A8': '.', 'A9': '5', ... }
+    initialgridvalues = grid_values(
+        initialgrid)  # dictionnary of initial values. Ex: {'A1': '4', 'A2': '.', 'A3': '.', 'A4': '.', 'A5': '.', 'A6': '.', 'A7': '8', 'A8': '.', 'A9': '5', ... }
     newgrid = initialgrid
 
-    #Go through all 3x3 units and fill empty squares with random unused digits
-    firstsquaresofunit = cross('ADG', '147') # one square in each unit: ['A1', 'A4', 'A7', 'D1', 'D4', 'D7', 'G1', 'G4', 'G7']
-    for fsou in firstsquaresofunit: #loop through the 9 units
+    # Go through all 3x3 units and fill empty squares with random unused digits
+    firstsquaresofunit = cross('ADG',
+                               '147')  # one square in each unit: ['A1', 'A4', 'A7', 'D1', 'D4', 'D7', 'G1', 'G4', 'G7']
+    for fsou in firstsquaresofunit:  # loop through the 9 units
         currentunit = units[fsou][2]
 
-        #loop trough all squares within a unit in order to extract initial squares with digits and digits used
+        # loop trough all squares within a unit in order to extract initial squares with digits and digits used
         listofsquareswithinitialvalue, listofsquareswithoutvalue, digitsused = [], [], ''
         for s in currentunit:
             d = initialgridvalues[s]
-            if d in emptydigits: # no value      emptydigits = '0.'
+            if d in emptydigits:  # no value      emptydigits = '0.'
                 listofsquareswithoutvalue.append(s)
             else:
                 listofsquareswithinitialvalue.append(s)
-                digitsused += d #capture all values from initial grid (cannot be replaced)
+                digitsused += d  # capture all values from initial grid (cannot be replaced)
 
-        #Fill empty squares randomly
+        # Fill empty squares randomly
         digitsused = shuffled(digitsused)
-        print(f"firstsquaresofunit={fsou} - currentunit = {currentunit} - digitsused={digitsused} - listofsquareswithinitialvalue={listofsquareswithinitialvalue}")
+        print(
+            f"firstsquaresofunit={fsou} - currentunit = {currentunit} - digitsused={digitsused} - listofsquareswithinitialvalue={listofsquareswithinitialvalue}")
 
-        #for s in listofsquareswithoutvalue:
+        # for s in listofsquareswithoutvalue:
         #    newgrid = assigndigit(s, digitsused.pop())  #DG could be replaced by a function assigndigit that could also update other things if needed.
-        #DGHERE
-
+        # DGHERE
 
     print(f"firstsquaresofunit={firstsquaresofunit}")
     # for r in rows step 3:
     #     for c in cols step 3:
     #         print(f"RC={r+c}")
 
-
-    #print(f"unitlist['A1']={unitlist['A1']}")
+    # print(f"unitlist['A1']={unitlist['A1']}")
     print(f"units['A1']={units['A1']}")
     print(f"units['A1'][2]={units['A1'][2]}")
-
-
-
 
     print("newgrid WITH FUN: %s", newgrid)
     print("initialgrid NO FUN: %s", initialgrid)
     return newgrid
-    
 
 
 ################ Display as 2-D grid ################
 def displaygrid(initialgrid, currentgrid, showconflicts=True):
     """Display these values as a 2-D grid. If only display a initialgrid, you can pass currentgrid = initialgrid"""
-    width = 3 # No need to display the possible values
-    line = '+'.join(['-'*(width*3)]*3)
-    i = 0 #the position between 0 and 80 of the square in the 9x9 grid
+    width = 3  # No need to display the possible values
+    line = '+'.join(['-' * (width * 3)] * 3)
+    i = 0  # the position between 0 and 80 of the square in the 9x9 grid
 
     displaystring = ''
     for r in rows:
         for c in cols:
-            displaystring += (Back.BLACK if initialgrid[i] not in emptydigits else Style.RESET_ALL) #DG will highlight numbers from initial grid   emptydigits = '0.'
+            displaystring += (Back.BLACK if initialgrid[
+                                                i] not in emptydigits else Style.RESET_ALL)  # DG will highlight numbers from initial grid   emptydigits = '0.'
             displaystring += ' ' + currentgrid[i] + ' '
-            displaystring += Style.RESET_ALL +  ('|' if c in '36' else '') + ('\n' if c in '9' else '') #display for a column
+            displaystring += Style.RESET_ALL + ('|' if c in '36' else '') + (
+                '\n' if c in '9' else '')  # display for a column
             i += 1
         if r in 'CF': displaystring = displaystring + line + '\n'
 
     print(displaystring)
     print(currentgrid)  # DGTEMP
 
-        #print (''.join(grid[i].center(width)+('|' if c in '36' else '') #DGHERE MUST REMOVE the 1
-        #              for c in cols))
-        #i += 1
-        #if r in 'CF': print(line)
+    # print (''.join(grid[i].center(width)+('|' if c in '36' else '') #DGHERE MUST REMOVE the 1
+    #              for c in cols))
+    # i += 1
+    # if r in 'CF': print(line)
+
 
 # def display(values):
 #     """Display these values as a 2-D grid."""
@@ -174,13 +181,15 @@ def from_file(filename, sep='\n'):
     "Parse a file into a list of strings, separated by sep."
     return open(filename).read().strip().split(sep)
 
+
 def shuffled(seq):
     "Return a randomly shuffled copy of the input sequence."
     seq = list(seq)
     random.shuffle(seq)
     return seq
 
-def filterTheDict(dictObj, callback): #DGTEMP - Not useful anymore
+
+def filterTheDict(dictObj, callback):  # DGTEMP - Not useful anymore
     """ Fonction copied from https://thispointer.com/python-filter-a-dictionary-by-conditions-on-keys-or-values/
     Iterate over all the key value pairs in dictionary and call the given
     callback function() on each pair. Items for which callback() returns True,
@@ -193,9 +202,11 @@ def filterTheDict(dictObj, callback): #DGTEMP - Not useful anymore
             newDict[key] = value
     return newDict
 
+
 ################ System test ################
 
 import time, random
+
 
 # def solve_all(grids, name='', showif=0.0, searchMethod='ToSpecify'):
 #     """Attempt to solve a sequence of grids. Report results.
@@ -240,8 +251,11 @@ import time, random
 
 def solved(values):
     "A puzzle is solved if each unit is a permutation of the digits 1 to 9."
+
     def unitsolved(unit): return set(values[s] for s in unit) == set(digits)
+
     return values is not False and all(unitsolved(unit) for unit in unitlist)
+
 
 # def random_puzzle(N=17):
 #     """Make a random puzzle with N or more assignments. Restart on contradictions.
@@ -260,15 +274,15 @@ def solved(values):
 ################ Main routine ################
 if __name__ == '__main__':
     test()
-    grid2 = '4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......' #DGSCRAP
+    grid2 = '4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......'  # DGSCRAP
     gridSCRAP = '4551158.5.3..........7..111.2.....6.....8.4......1..222..6.3.7.5..2.....1.4......'  # DGSCRAP
     print(f"grid_values(grid2)={grid_values(grid2)}")
     displaygrid(grid2, gridSCRAP)
-    #print(f"parse_grid(grid2)={parse_grid(grid2)}")
+    # print(f"parse_grid(grid2)={parse_grid(grid2)}")
     displaygrid(grid2, grid2)
     gridSCRAP = fillgridrandomly(grid2)
     print('grid2: %s', grid2)
-    #print('gridSCRAP: %s', gridSCRAP)
+    # print('gridSCRAP: %s', gridSCRAP)
     print('Must remove #DGSCRAP + rule for color management + SHOWCONFLICTS')
 
 ## References used:
@@ -277,6 +291,3 @@ if __name__ == '__main__':
 ## http://www.krazydad.com/blog/2005/09/29/an-index-of-sudoku-strategies/
 ## http://www2.warwick.ac.uk/fac/sci/moac/currentstudents/peter_cock/python/sudoku/
 ## https://www.sudokuoftheday.com/techniques/naked-pairs-triples/ (DG)
-
-
-
