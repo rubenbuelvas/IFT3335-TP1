@@ -32,7 +32,7 @@ units = dict((s, [u for u in unitlist if s in u])
 peers = dict((s, set(sum(units[s], [])) - set([s]))
              for s in squares)
 
-searchMethods = {'Brute Force', 'Norvig Heuristic', 'Norvig Improved'}  # DGNEW the available search methods
+search_methods = {'Brute Force', 'Norvig Heuristic', 'Norvig Improved', 'Hill'}  # DGNEW the available search methods
 global counttotalsearches, countnakedimprovements  # DGTEMP The total number of searches and the maximum depth (not sure if implemented correctly)
 counttotalsearches = 0
 countnakedimprovements = 0  # Number of naked pairs or triples found
@@ -41,7 +41,7 @@ countnakedimprovements = 0  # Number of naked pairs or triples found
 ################ Unit Tests ################
 
 def test():
-    "A set of tests that must pass."
+    """A set of tests that must pass."""
     assert len(squares) == 81
     assert len(unitlist) == 27
     assert all(len(units[s]) == 3 for s in squares)
@@ -49,9 +49,8 @@ def test():
     assert units['C2'] == [['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2', 'I2'],
                            ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'],
                            ['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3']]
-    assert peers['C2'] == set(['A2', 'B2', 'D2', 'E2', 'F2', 'G2', 'H2', 'I2',
-                               'C1', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9',
-                               'A1', 'A3', 'B1', 'B3'])
+    assert peers['C2'] == {'A2', 'B2', 'D2', 'E2', 'F2', 'G2', 'H2', 'I2', 'C1', 'C3',
+                           'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'A1', 'A3', 'B1', 'B3'}
     print('All tests pass.')
 
 
@@ -132,8 +131,8 @@ def display(values):
 
 ################ Search ################
 
-def solve(grid, searchMethod):
-    return search(parse_grid(grid), searchMethod)
+def solve(grid, search_method):
+    return search(parse_grid(grid), search_method)
 
 
 def findbettersquarewithpairsandtriplesOLD(s, values,
@@ -230,7 +229,7 @@ def findbettersquarewithpairsandtriples(values_in,
     return None, None  # No better square found
 
 
-def search(values, searchMethod):
+def search(values, search_method):
     """Using depth-first search and propagation, try all possible values."""
     if values is False:
         return False  ## Failed earlier
@@ -242,30 +241,27 @@ def search(values, searchMethod):
 
     # DG NEW CODE START ---------------------------------------------------
     # Will search differently depending on the search method
-    if searchMethod not in searchMethods: raise ValueError(
-        f"Unknown search method {searchMethod}. Available search methods are {searchMethods}")  # DGNEW
+    if search_method not in search_methods: raise ValueError(
+        f"Unknown search method {search_method}. Available search methods are {search_methods}")  # DGNEW
 
-    if searchMethod == 'Brute Force':
+    if search_method == 'Brute Force':
         # choose a random unfilled square
         s = random.choice([s_tmp for s_tmp in squares if len(
             values[s_tmp]) > 1])  # Will select a square in a list of squares with more than one possibility
         # s = random.choice(squares)
         # while len(values[s]) == 1:
         #     s = random.choice(squares)
-    elif searchMethod == 'Norvig Heuristic':
-        ## Chose the unfilled square s with the fewest possibilities
-        n, s = min((len(values[s]), s) for s in squares if
-                   len(values[s]) > 1)  # n is the number of possible values for this square
-    elif searchMethod == 'Norvig Improved':
-        s2, possibledigits = findbettersquarewithpairsandtriples(values,
-                                                                 False)  # DGHERE Will identify Naked Pairs/Triples in order to select a better value
+    elif search_method == 'Norvig Heuristic':
+        # Chose the unfilled square s with the fewest possibilities
+        n, s = min((len(values[s]), s) for s in squares if len(values[s]) > 1)  # n is the number of possible values for this square
+    elif search_method == 'Norvig Improved':
+        s2, possibledigits = findbettersquarewithpairsandtriples(values, False)  # DGHERE Will identify Naked Pairs/Triples in order to select a better value
         if s2:  # If a better square is found (s2), will use it
             valuesnew = values.copy()
             valuesnew[s2] = possibledigits
             # print(f"Better square found: {s2} with possibledigits={valuesnew[s2]}") # DGTEMP
-            return search(assign(valuesnew, s2, possibledigits),
-                          searchMethod)  # DGREVIEW We assign the value to s2 for Naked pair. But values aren't updated permanently
-            # return some(search(assign(valuesnew, s2, d), searchMethod)
+            return search(assign(valuesnew, s2, possibledigits), search_method)  # DGREVIEW We assign the value to s2 for Naked pair. But values aren't updated permanently
+            # return some(search(assign(valuesnew, s2, d), search_method)
             #            for d in possibledigits) #DG uses values2, which is a result with less options than values for square s2
 
         # DG if no better square found, will take the Norvig Heuristic
@@ -279,34 +275,37 @@ def search(values, searchMethod):
         #     valuesnew = values.copy() #DGSCRAP
         #     valuesnew[s2] = possibledigits
         #     #print(f"Better square found: {s2} with possibledigits={valuesnew[s2]}") # DGTEMP
-        #     return some(search(assign(valuesnew.copy(), s2, d), searchMethod)
+        #     return some(search(assign(valuesnew.copy(), s2, d), search_method)
         #                 for d in possibledigits) #DG uses values2, which is a result with less options than values for square s2
+
+    elif search_method == 'Hill':
+        pass
+
     else:
-        raise ValueError(f"Search method {searchMethod} not implemented")
+        raise ValueError(f"Search method {search_method} not implemented")
     # DGNEW CODE STOP ---------------------------------------------------
 
     # try possible numbers for s in random order
-    return some(search(assign(values.copy(), s, d), searchMethod)
-                for d in shuffled(values[
-                                      s]))  # DG for d in values[s]) if we want to get rid of the random aspect of shuffled and always follow the same path
+    return some(search(assign(values.copy(), s, d), search_method) for d in shuffled(values[s]))  # DG for d in values[s]) if we want to get rid of the random aspect of shuffled and always follow the same path
 
 
 ################ Utilities ################
 
+
 def some(seq):
-    "Return some element of seq that is true."
+    """Return some element of seq that is true."""
     for e in seq:
         if e: return e
     return False
 
 
 def from_file(filename, sep='\n'):
-    "Parse a file into a list of strings, separated by sep."
+    """Parse a file into a list of strings, separated by sep."""
     return open(filename).read().strip().split(sep)
 
 
 def shuffled(seq):
-    "Return a randomly shuffled copy of the input sequence."
+    """Return a randomly shuffled copy of the input sequence."""
     seq = list(seq)
     random.shuffle(seq)
     return seq
@@ -329,7 +328,7 @@ def filterTheDict(dictObj, callback):  # DGTEMP - Not useful anymore
 ################ System test ################
 
 
-def solve_all(grids, name='', showif=0.0, searchMethod='ToSpecify'):
+def solve_all(grids, name='', showif=0.0, search_method='ToSpecify'):
     """Attempt to solve a sequence of grids. Report results.
     When showif is a number of seconds, display puzzles that take longer.
     When showif is None, don't display any puzzles."""
@@ -340,7 +339,7 @@ def solve_all(grids, name='', showif=0.0, searchMethod='ToSpecify'):
     def time_solve(grid):
         # start = time.clock()
         start = time.process_time()
-        values = solve(grid, searchMethod)
+        values = solve(grid, search_method)
         t = time.process_time() - start
 
         # display(grid_values(grid)) #DGREMOVED
@@ -349,12 +348,15 @@ def solve_all(grids, name='', showif=0.0, searchMethod='ToSpecify'):
         ## Display puzzles that take long enough
         if showif is not None and t > showif:
             display(grid_values(grid))
-            if values: display(values)
+            if values:
+                display(values)
             print('(%.2f seconds)\n' % t)
-        return (t, solved(values))
+        return t, solved(values)
 
-    if searchMethod not in searchMethods: raise ValueError(
-        f"Unknown search method {searchMethod}. Available search methods are {searchMethods}")  # DGNEW
+    if search_method not in search_methods:
+        raise ValueError(
+            f"Unknown search method {search_method}. Available search methods are {search_methods}"
+        )  # DGNEW
 
     times, results = zip(*[time_solve(grid) for grid in grids])
     N = len(grids)
@@ -371,7 +373,9 @@ def solve_all(grids, name='', showif=0.0, searchMethod='ToSpecify'):
         print(
             "Solved %d of %d %s puzzles in %.2f secs (avg %.2f secs (%d Hz), max %.2f secs). Total searches %d - Naked improvements %d - %s" % (
                 sum(results), N, name, sum(times), sum(times) / N, hz, max(times), counttotalsearches,
-                countnakedimprovements, searchMethod))  # DGNEW Added parameter for search method
+                countnakedimprovements, search_method
+            )
+        )  # DGNEW Added parameter for search method
 
 
 def solved(values):
