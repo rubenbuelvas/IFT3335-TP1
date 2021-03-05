@@ -135,8 +135,7 @@ def solve(grid, search_method):
     return search(parse_grid(grid), search_method)
 
 
-def findbettersquarewithpairsandtriplesOLD(s, values,
-                                           printwhenfound=True):  # DGNEW    <--------------- THIS CODE CAN BE OPTIMIZED
+def findbettersquarewithpairsandtriplesOLD(s, values, printwhenfound=True):  # DGNEW    <--------------- THIS CODE CAN BE OPTIMIZED
     """Will use naked pairs in order to identify a better square to use if possible.
        Inspired by https://www.sudokuoftheday.com/techniques/naked-pairs-triples/"""
 
@@ -181,8 +180,7 @@ def findbettersquarewithpairsandtriplesOLD(s, values,
     return None, None  # No better square found
 
 
-def findbettersquarewithpairsandtriples(values_in,
-                                        printwhenfound=True):  # DGNEW    <--------------- THIS CODE CAN BE OPTIMIZED
+def findbettersquarewithpairsandtriples(values_in, printwhenfound=True):  # DGNEW    <--------------- THIS CODE CAN BE OPTIMIZED
     """Will use naked pairs in order to identify a better square to use if possible.
        Inspired by https://www.sudokuoftheday.com/techniques/naked-pairs-triples/"""
 
@@ -277,7 +275,6 @@ def search(values, search_method):
         #     #print(f"Better square found: {s2} with possibledigits={valuesnew[s2]}") # DGTEMP
         #     return some(search(assign(valuesnew.copy(), s2, d), search_method)
         #                 for d in possibledigits) #DG uses values2, which is a result with less options than values for square s2
-
     elif search_method == 'Hill':
         pass
 
@@ -312,7 +309,7 @@ def shuffled(seq):
 
 
 def filterTheDict(dictObj, callback):  # DGTEMP - Not useful anymore
-    """ Fonction copied from https://thispointer.com/python-filter-a-dictionary-by-conditions-on-keys-or-values/
+    """ Function copied from https://thispointer.com/python-filter-a-dictionary-by-conditions-on-keys-or-values/
     Iterate over all the key value pairs in dictionary and call the given
     callback function() on each pair. Items for which callback() returns True,
     add them to the new dictionary. In the end return the new dictionary."""

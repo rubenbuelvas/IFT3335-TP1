@@ -18,6 +18,12 @@
 
 * TODO introduction : brief description of the work realised
 
+* Q2
+The performance of the Norvig algorithm without heuristic is, at least in the cases we tried, always worse than the one
+that used some kind of heuristic. On average, it took twice as much time to solve the problem without the help of the
+heuristic. However, even if twice is not that bad, in the worse case scenarios we could get around five times the time.
+As it is true in many other cases, there's no reason whatsoever to not use a heuristic when available.
+TODO Check numbers
 
 * TODO choice of heuristics for Q3
 

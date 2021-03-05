@@ -190,7 +190,7 @@ def shuffled(seq):
 
 
 def filterTheDict(dictObj, callback):  # DGTEMP - Not useful anymore
-    """ Fonction copied from https://thispointer.com/python-filter-a-dictionary-by-conditions-on-keys-or-values/
+    """ Function copied from https://thispointer.com/python-filter-a-dictionary-by-conditions-on-keys-or-values/
     Iterate over all the key value pairs in dictionary and call the given
     callback function() on each pair. Items for which callback() returns True,
     add them to the new dictionary. In the end return the new dictionary."""
