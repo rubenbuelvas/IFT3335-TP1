@@ -152,8 +152,7 @@ def findbettersquarewithpairsandtriplesOLD(s, values, printwhenfound=True):  # D
     for unit in units[s]:  # Will loop through the 3 units tied to the square
         for square_in_same_unit in unit:  # We could optimize here and avoid looking at squares with only one possible value
             # Looks for pairs
-            if (len(values[s]) == 2) and (square_in_same_unit != s) and values[square_in_same_unit] == values[
-                s]:  # a naked pair is found
+            if (len(values[s]) == 2) and (square_in_same_unit != s) and values[square_in_same_unit] == values[s]:  # a naked pair is found
                 # if printwhenfound:
                 #    print(f"Naked pair ''{values[s]}'' found for squares {s} and {square_in_same_unit}")
 
@@ -243,28 +242,23 @@ def search(values, search_method):
         f"Unknown search method {search_method}. Available search methods are {search_methods}")  # DGNEW
 
     if search_method == 'Brute Force':
-        # choose a random unfilled square
-        s = random.choice([s_tmp for s_tmp in squares if len(
-            values[s_tmp]) > 1])  # Will select a square in a list of squares with more than one possibility
-        # s = random.choice(squares)
-        # while len(values[s]) == 1:
-        #     s = random.choice(squares)
+        # choose the first unfilled square
+        s = [s_tmp for s_tmp in squares if len(values[s_tmp]) > 1][0]
     elif search_method == 'Norvig Heuristic':
         # Chose the unfilled square s with the fewest possibilities
         n, s = min((len(values[s]), s) for s in squares if len(values[s]) > 1)  # n is the number of possible values for this square
     elif search_method == 'Norvig Improved':
-        s2, possibledigits = findbettersquarewithpairsandtriples(values, False)  # DGHERE Will identify Naked Pairs/Triples in order to select a better value
+        s2, possible_digits = findbettersquarewithpairsandtriples(values, False)  # DGHERE Will identify Naked Pairs/Triples in order to select a better value
         if s2:  # If a better square is found (s2), will use it
-            valuesnew = values.copy()
-            valuesnew[s2] = possibledigits
+            values_new = values.copy()
+            values_new[s2] = possible_digits
             # print(f"Better square found: {s2} with possibledigits={valuesnew[s2]}") # DGTEMP
-            return search(assign(valuesnew, s2, possibledigits), search_method)  # DGREVIEW We assign the value to s2 for Naked pair. But values aren't updated permanently
+            return search(assign(values_new, s2, possible_digits), search_method)  # DGREVIEW We assign the value to s2 for Naked pair. But values aren't updated permanently
             # return some(search(assign(valuesnew, s2, d), search_method)
             #            for d in possibledigits) #DG uses values2, which is a result with less options than values for square s2
 
         # DG if no better square found, will take the Norvig Heuristic
-        n, s = min((len(values[s]), s) for s in squares if
-                   len(values[s]) > 1)  # n is the number of possible values for this square
+        n, s = min((len(values[s]), s) for s in squares if len(values[s]) > 1)  # n is the number of possible values for this square
 
         # s2, possibledigits = findbettersquarewithpairsandtriples(values, False) #DGHERE Will identify Naked Pairs/Triples in order to select a better value
         # if s2: # If a better square is found (s2), will use it
@@ -275,6 +269,7 @@ def search(values, search_method):
         #     #print(f"Better square found: {s2} with possibledigits={valuesnew[s2]}") # DGTEMP
         #     return some(search(assign(valuesnew.copy(), s2, d), search_method)
         #                 for d in possibledigits) #DG uses values2, which is a result with less options than values for square s2
+
     elif search_method == 'Hill':
         pass
 
