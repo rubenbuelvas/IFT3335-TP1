@@ -23,25 +23,19 @@ print_display = 'nothing'  # Values: ["nothing", "minimum", "init grid", "init a
 from colorama import Fore, Back, Style  # example: print(Fore.BLUE + displaystring)
 
 
-def cross(A, B):
-    # Cross product of elements in A and elements in B.
-    return [a + b for a in A for b in B]
-
-
 class Sudoku:
 
     def __init__(self, grid, showif=0.0):
         self.showif = showif
-        digits = '123456789'
+        self.cols = '123456789'
         self.empty_digits = '0. '
         self.rows = 'ABCDEFGHI'
         self.unit_types = ['row', 'column', 'unit3x3']
-        self.cols = digits
-        self.squares = cross(self.rows, self.cols)
+        self.squares = self.cross(self.rows, self.cols)
         self.unit_list = (
-                [cross(self.rows, c) for c in self.cols] +
-                [cross(r, self.cols) for r in self.rows] +
-                [cross(rs, cs) for rs in ('ABC', 'DEF', 'GHI') for cs in ('123', '456', '789')]
+                [self.cross(self.rows, c) for c in self.cols] +
+                [self.cross(r, self.cols) for r in self.rows] +
+                [self.cross(rs, cs) for rs in ('ABC', 'DEF', 'GHI') for cs in ('123', '456', '789')]
         )
         self.units = dict(
             (s, [u for u in self.unit_list if s in u]) for s in self.squares
@@ -51,11 +45,18 @@ class Sudoku:
         )
         # Convert grid into a dict of {square: char} with '0' or '.' for empties.
         # Example: {'A1': '4', 'A2': '.', 'A3': '.', 'A4': '.', 'A5': '.', 'A6': '.', 'A7': '8', 'A8': '.', 'A9': ...
-        chars = [c for c in grid if c in digits or c in '0.']
+        chars = [c for c in grid if c in self.cols or c in '0.']
         assert len(chars) == 81
         self.grid = dict(zip(self.squares, chars))
         self.gv_init = None
         self.gv_current = None
+        self.gv_conflicts = None
+        self.count_conflicts = 0
+        self.first_squares_of_unit3x3 = self.cross('ADG', '147')
+
+    def cross(self, A, B):
+        # Cross product of elements in A and elements in B.
+        return [a + b for a in A for b in B]
 
     # Unit Tests
     def test(self):
@@ -75,12 +76,12 @@ class Sudoku:
         return 'All tests pass.'
 
     # Constraint functions
-    def squares_causing_max_conflicts(self, conflicts_grid_values):
+    def squares_causing_max_conflicts(self):
         # Will receive a grid filled with values and a conflicts_grid_values and will return:
         #   - a set of all squares having the maximum number of conflits
         #   - the number of conflicts (int) for this maximum"""
-        max_conflicts = max(conflicts_grid_values)
-        return conflicts_grid_values[max_conflicts], max_conflicts
+        max_conflicts = max(self.gv_conflicts)
+        return self.gv_conflicts[max_conflicts], max_conflicts
 
     def is_initial_squares(self, s):
         # Will receive the initial grid and a square and return True if filled in the initial puzzle
@@ -119,20 +120,54 @@ class Sudoku:
         # unit_type can be 'row', 'column', or 'unit3x3'
         return (set(self.squares_within_unit_list(s, unit_type)) - set(s)) - self.initial_squares_set()
 
-    def initial_squares_set(gv_init):
-        """Will receive the initial grid and return a set of all squares not empty"""
+    def initial_squares_set(self):
+        # Will receive the initial grid and return a set of all squares not empty
         # loop trough all squares and list unempty squares (initial puzzle)
-        set_initialsquares = set()
-        for r in rows:
-            for c in cols:
-                if is_initial_squares(gv_init, r + c):
-                    set_initialsquares.add(r + c)
-        return set_initialsquares
+        set_initial_squares = set()
+        for r in self.rows:
+            for c in self.cols:
+                if self.is_initial_squares(r + c):
+                    set_initial_squares.add(r + c)
+        return set_initial_squares
 
     # Solve sudoku with hill climbing
     def solve_hill(self):
         pass
 
+    def is_solved(self):
+        # Returns True is puzzle is solved and False otherwise.
+        return self.count_conflicts == 0
+
+    def fill_grid_randomly(self):
+        """Will return a new gridvalues with all empty squares filled randomly without putting the
+           same digit twice in a 3x3 unit."""
+        # Reminder:   units['C2'] == [['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2', 'I2'], #column
+        #                             ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'], #line
+        #                             ['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3']] #unit 3x3
+        new_grid_values = self.gv_init.copy()  # dictionnary of initial values. Ex: {'A1': '4', 'A2': '.', 'A3': '.', ...
+
+        # Go through all 3x3 units and fill empty squares with random unused digits
+        for fsou in self.first_squares_of_unit3x3:  # loop through the 9 units.
+            current_unit = self.units[fsou][2]  # index 3 gives the 3x3 unit
+
+            # Loop trough all squares within a unit in order to extract initial squares with digits and digits used
+            listofsquareswithinitialvalue, listofsquareswithoutvalue, digitsused = [], [], ''
+            for s in current_unit:  # loops trough the 9 values of the 3x3 unit
+                d = self.gv_init[s]
+                if d in self.empty_digits:  # no value
+                    listofsquareswithoutvalue.append(s)
+                else:
+                    listofsquareswithinitialvalue.append(s)
+                    digitsused += d  # capture all values from initial grid (cannot be replaced)
+
+            # Fill empty squares randomly
+            remaining_digits = list(
+                shuffled(self.cols.translate({ord(c): '' for c in digitsused}))  # removes digits + shuffle
+            )
+            for s in listofsquareswithoutvalue:
+                self.gv_current[s] = remaining_digits.pop()
+            if len(remaining_digits) != 0:
+                raise ValueError(f"Programming error: remaining digits should be empty but contains: {remaining_digits}")
 
 
 
@@ -155,49 +190,12 @@ class Sudoku:
 #
 #     return gv_current
 
-def fillgridrandomly(initialgridvalues):
-    """Will return a new gridvalues with all empty squares filled randomly without putting the
-       same digit twice in a 3x3 unit."""
-    # Reminder:   units['C2'] == [['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2', 'I2'], #column
-    #                             ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'], #line
-    #                             ['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3']] #unit 3x3
-    newgridvalues = initialgridvalues.copy()  # dictionnary of initial values. Ex: {'A1': '4', 'A2': '.', 'A3': '.', ...
-
-    # Go through all 3x3 units and fill empty squares with random unused digits
-    for fsou in firstsquaresofunit3x3:  # loop through the 9 units.
-        currentunit = units[fsou][2]  # index 3 gives the 3x3 unit
-
-        # Loop trough all squares within a unit in order to extract initial squares with digits and digits used
-        listofsquareswithinitialvalue, listofsquareswithoutvalue, digitsused = [], [], ''
-        for s in currentunit:  # loops trough the 9 values of the 3x3 unit
-            d = initialgridvalues[s]
-            if d in emptydigits:  # no value
-                listofsquareswithoutvalue.append(s)
-            else:
-                listofsquareswithinitialvalue.append(s)
-                digitsused += d  # capture all values from initial grid (cannot be replaced)
-
-        # Fill empty squares randomly
-        remainingdigits = list(shuffled(digits.translate({ord(c): '' for c in digitsused})))  # removes digits + shuffle
-        for s in listofsquareswithoutvalue:
-            newgridvalues[s] = remainingdigits.pop()
-        if len(remainingdigits) != 0:
-            raise ValueError(f"Programming error: remaining digits should be empty but contains: {remainingdigits}")
-        # print(f"digitsused={digitsused} - remainingdigits={remainingdigits} = newgridvalues={newgridvalues}")
-
-    return newgridvalues
-
 
 def countconflicts(gv_init, gv_current):
     """Receives the initial grid and the current grid and returns a total evaluation of the
        conflicts in the grid (sum of all conflicts)"""
     tmp, total_conflicts, tmp = evalconflicts(gv_init, gv_current)
     return total_conflicts
-
-
-def is_solved(gv_init, gv_current):
-    """Returns True is puzzle is solved and False otherwise"""
-    return countconflicts == 0
 
 
 def evalconflicts(gv_init, gv_current):
