@@ -51,7 +51,7 @@ class Sudoku:
         self.gv_init = None
         self.gv_current = None
         self.gv_conflicts = None
-        self.count_conflicts = 0
+        self.total_conflicts = 0
         self.first_squares_of_unit3x3 = self.cross('ADG', '147')
 
     def cross(self, A, B):
@@ -136,7 +136,7 @@ class Sudoku:
 
     def is_solved(self):
         # Returns True is puzzle is solved and False otherwise.
-        return self.count_conflicts == 0
+        return self.total_conflicts == 0
 
     def fill_grid_randomly(self):
         """Will return a new gridvalues with all empty squares filled randomly without putting the
@@ -169,6 +169,85 @@ class Sudoku:
             if len(remaining_digits) != 0:
                 raise ValueError(f"Programming error: remaining digits should be empty but contains: {remaining_digits}")
 
+    def count_conflicts(self):
+        """Receives the initial grid and the current grid and returns a total evaluation of the
+           conflicts in the grid (sum of all conflicts)"""
+        tmp, self.total_conflicts, tmp = self.eval_conflicts()
+
+    def eval_conflicts(self):
+        """Receives the initial grid and the current grid and returns:
+           - # A grid_values of conflicts (dict of {square: nb_of_conflits}
+           - A total evaluation of the conflicts in the grid (sum of all conflicts)
+           - A dictionary representing a list of squares (values) with the number of conflicts (int) as a key
+           Assumption: there are no conflicts in a 3x3 unit and there is a digit in each square"""
+        # Reminder:   units['C2'] == [['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2', 'I2'], #column
+        #                             ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'], #line
+        #                             ['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3']] #unit 3x3
+
+        conflicts_grid_values = {}  # A grid_values of conflicts (dict of {square: nb_of_conflits}
+        conflicts_dict = {}  # A dictionary representing a list of squares (values) with the number of conflicts as a key
+
+        conflictvaluestotal = 0  # Evaluation of the conflicts in the grid
+
+        # Will loop through each square
+        for r in self.rows:
+            for c in self.cols:
+                conflictvalue = 0
+                if (self.gv_init[r + c] not in self.empty_digits) or (self.gv_current[r + c] in self.emptydigits):
+                    conflictvalue = 0  # square filled in the initial puzzle or current grid with empty digits
+                else:  # square randomly filled in the current grid
+                    # Will calculate the number of conflict
+                    u_column, u_line = self.units[r + c][0], self.units[r + c][1]  # conflicts in column and conflicts in line
+                    for s in u_column:
+                        if (s != r + c) and self.gv_current[s] == self.gv_current[r + c]: conflictvalue += 1
+                    for s in u_line:
+                        if (s != r + c) and self.gv_current[s] == self.gv_current[r + c]: conflictvalue += 1
+
+                # Update dictionaries
+                conflicts_grid_values[r + c] = conflictvalue  # Put the value (int) of the conflict in grid_value
+                if not conflicts_dict.get(conflictvalue):
+                    conflicts_dict[conflictvalue] = []  # List of squares (values) for this number of conflicts (key)
+                conflicts_dict[conflictvalue].append(r + c)
+
+                conflictvaluestotal += conflictvalue
+
+        return conflicts_grid_values, conflictvaluestotal, conflicts_dict
+
+    # Display as 2-D grid
+    def display_gv(self, show_conflicts=True):
+        """Display grid_values as a 2-D grid. If only display a initialgrid, you can pass currentgrid = initialgrid.
+           Same as displaygrid(), but used dictionnary gridvalues instead"""
+        width = 3  # No need to display the possible values
+        line = '+'.join(['-' * (width * 3)] * 3)
+
+        if show_conflicts:  # Will evaluate conflicts in order to show them
+            self.gv_conflicts, nb_conflicts, conflicts_grid_values = self.eval_conflicts()
+            # Header of the grid
+            displaystring = '-------- VALUE GRID ---------    --- CONFLICTS GRID (' + str(nb_conflicts).ljust(
+                3) + ') ----\n'  # header
+        else:
+            displaystring = '-------- VALUE GRID ---------\n'
+
+        # Lines
+        for r in self.rows:
+            for c in self.cols:  # Will print all digits of the current row (all columns)
+                # displays the value_grid
+                # Will highlight numbers from initial grid   emptydigits = '0.'
+                displaystring += (Back.BLACK if self.gv_init[r + c] not in self.empty_digits else Style.RESET_ALL)
+                displaystring += ' ' + str(self.gv_current[r + c]) + ' '
+                displaystring += Style.RESET_ALL + ('|' if c in '36' else '') + (
+                    '\n' if (c in '9') and (not show_conflicts) else '')  # separator after a group of 3 columns
+            if show_conflicts:  # displays the value_grid
+                displaystring += '    '
+                for c2 in self.cols:
+                    # Will highlight numbers from initial grid   emptydigits = '0.'
+                    displaystring += (Back.BLACK if self.gv_init[r + c2] not in self.empty_digits else Style.RESET_ALL)
+                    displaystring += ' ' + str(self.gv_conflicts[r + c2]) + ' '
+                    # Display for a column
+                    displaystring += Style.RESET_ALL + ('|' if c2 in '36' else '') + ('\n' if c2 in '9' else '')
+
+            if r in 'CF': displaystring = displaystring + line + ('    ' + line if show_conflicts else '') + '\n'
+        print(displaystring)
 
 
 # def swap2numbers(gv_init, gv_current, conflicts_grid_values):
@@ -191,93 +270,10 @@ class Sudoku:
 #     return gv_current
 
 
-def countconflicts(gv_init, gv_current):
-    """Receives the initial grid and the current grid and returns a total evaluation of the
-       conflicts in the grid (sum of all conflicts)"""
-    tmp, total_conflicts, tmp = evalconflicts(gv_init, gv_current)
-    return total_conflicts
 
 
-def evalconflicts(gv_init, gv_current):
-    """Receives the initial grid and the current grid and returns:
-       - # A grid_values of conflicts (dict of {square: nb_of_conflits}
-       - A total evaluation of the conflicts in the grid (sum of all conflicts)
-       - A dictionary representing a list of squares (values) with the number of conflicts (int) as a key
-       Assumption: there are no conflicts in a 3x3 unit and there is a digit in each square"""
-    # Reminder:   units['C2'] == [['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2', 'I2'], #column
-    #                             ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'], #line
-    #                             ['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3']] #unit 3x3
-
-    conflicts_grid_values = {}  # A grid_values of conflicts (dict of {square: nb_of_conflits}
-    conflicts_dict = {}  # A dictionary representing a list of squares (values) with the number of conflicts as a key
-
-    conflictvaluestotal = 0  # Evaluation of the conflicts in the grid
-
-    # Will loop through each square
-    for r in rows:
-        for c in cols:
-            conflictvalue = 0
-            if (gv_init[r + c] not in emptydigits) or (gv_current[r + c] in emptydigits):
-                conflictvalue = 0  # square filled in the initial puzzle or current grid with empty digits
-                # print(f"INITIAL r={r} c={c} gv_init[r+c]={gv_init[r+c]}")
-            else:  # square randomly filled in the current grid
-                # Will calculate the number of conflict
-                u_column, u_line = units[r + c][0], units[r + c][1]  # conflicts in column and conflicts in line
-                # print(f"CURRENT r={r} c={c}, u_column={u_column}")
-                for s in u_column:
-                    if (s != r + c) and gv_current[s] == gv_current[r + c]: conflictvalue += 1
-                for s in u_line:
-                    if (s != r + c) and gv_current[s] == gv_current[r + c]: conflictvalue += 1
-
-            # Update dictionaries
-            conflicts_grid_values[r + c] = conflictvalue  # Put the value (int) of the conflict in grid_value
-            if not conflicts_dict.get(conflictvalue):
-                conflicts_dict[conflictvalue] = []  # List of squares (values) for this number of conflicts (key)
-            conflicts_dict[conflictvalue].append(r + c)
-
-            conflictvaluestotal += conflictvalue
-
-    return conflicts_grid_values, conflictvaluestotal, conflicts_dict
 
 
-################ Display as 2-D grid ################
-def displaygridv(gv_init, gv_current, showconflicts=True):
-    """Display grid_values as a 2-D grid. If only display a initialgrid, you can pass currentgrid = initialgrid.
-       Same as displaygrid(), but used dictionnary gridvalues instead"""
-    width = 3  # No need to display the possible values
-    line = '+'.join(['-' * (width * 3)] * 3)
-
-    if showconflicts:  # Will evaluate conflicts in order to show them
-        gv_conflicts, nb_conflicts, conflicts_grid_values = evalconflicts(gv_init,
-                                                                          gv_current)  # Will initiale a grid_value containing number of conflicts
-
-    # Header of the grid
-    if showconflicts:
-        displaystring = '-------- VALUE GRID ---------    --- CONFLICTS GRID (' + str(nb_conflicts).ljust(
-            3) + ') ----\n'  # header
-    else:
-        displaystring = '-------- VALUE GRID ---------\n'
-
-    # Lines
-    for r in rows:
-        for c in cols:  # Will print all digits of the current row (all columns)
-            # displays the value_grid
-            displaystring += (Back.BLACK if gv_init[
-                                                r + c] not in emptydigits else Style.RESET_ALL)  # Will highlight numbers from initial grid   emptydigits = '0.'
-            displaystring += ' ' + str(gv_current[r + c]) + ' '
-            displaystring += Style.RESET_ALL + ('|' if c in '36' else '') + (
-                '\n' if (c in '9') and (not showconflicts) else '')  # separator after a group of 3 columns
-        if showconflicts:  # displays the value_grid
-            displaystring += '    '
-            for c2 in cols:
-                displaystring += (Back.BLACK if gv_init[
-                                                    r + c2] not in emptydigits else Style.RESET_ALL)  # Will highlight numbers from initial grid   emptydigits = '0.'
-                displaystring += ' ' + str(gv_conflicts[r + c2]) + ' '
-                displaystring += Style.RESET_ALL + ('|' if c2 in '36' else '') + (
-                    '\n' if c2 in '9' else '')  # Display for a column
-
-        if r in 'CF': displaystring = displaystring + line + ('    ' + line if showconflicts else '') + '\n'
-    print(displaystring)
 
 
 ################ Search ################
