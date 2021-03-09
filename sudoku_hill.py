@@ -51,7 +51,7 @@ class Sudoku:
         chars = [c for c in grid if c in self.cols or c in '0.']
         assert len(chars) == 81
         self.gv_init = dict(zip(self.squares, chars))
-        self.gv_current = None
+        self.gv_current = self.gv_init
         self.gv_conflicts = None
         self.total_conflicts = 0
         self.first_squares_of_unit3x3 = self.cross('ADG', '147')
@@ -151,24 +151,25 @@ class Sudoku:
             current_unit = self.units[fsou][2]  # index 3 gives the 3x3 unit
 
             # Loop trough all squares within a unit in order to extract initial squares with digits and digits used
-            listofsquareswithinitialvalue, listofsquareswithoutvalue, digitsused = [], [], ''
+            list_of_squares_with_initial_value, list_of_squares_without_value, digits_used = [], [], ''
             for s in current_unit:  # loops trough the 9 values of the 3x3 unit
                 d = self.gv_init[s]
                 if d in self.empty_digits:  # no value
-                    listofsquareswithoutvalue.append(s)
+                    list_of_squares_without_value.append(s)
                 else:
-                    listofsquareswithinitialvalue.append(s)
-                    digitsused += d  # capture all values from initial grid (cannot be replaced)
+                    list_of_squares_with_initial_value.append(s)
+                    digits_used += d  # capture all values from initial grid (cannot be replaced)
 
             # Fill empty squares randomly
             remaining_digits = list(
-                shuffled(self.digits.translate({ord(c): '' for c in digitsused}))  # removes digits + shuffle
+                shuffled(self.digits.translate({ord(c): '' for c in digits_used}))  # removes digits + shuffle
             )
-            for s in listofsquareswithoutvalue:
+            for s in list_of_squares_without_value:
                 self.gv_current[s] = remaining_digits.pop()
             if len(remaining_digits) != 0:
                 raise ValueError(
-                    f"Programming error: remaining digits should be empty but contains: {remaining_digits}")
+                    f"Programming error: remaining digits should be empty but contains: {remaining_digits}"
+                )
 
     def count_conflicts(self, grid):
         """Receives the initial grid and the current grid and returns a total evaluation of the
@@ -269,6 +270,7 @@ class Sudoku:
             raise ValueError(
                 f'Unknown search method {self.search_method}. Available search methods are {self.search_methods}'
             )
+        return self.gv_init, self.gv_current
 
     def improve_solution_hill_climb_calc_all_swaps3x3(self, verbose):
         """Receives a puzzle with conflicts and tries to decrease the number of conflicts by swapping 2 values
@@ -295,7 +297,7 @@ class Sudoku:
 
         # Will simulate each swap, calculate the total conflicts for each swap and choose the best
         best_puzzle = self.gv_current
-        current_total_conflicts = self.count_conflicts()
+        current_total_conflicts = self.count_conflicts(best_puzzle)
         best_total_conflicts = current_total_conflicts
 
         while True:  # Loop until a maximum is found
