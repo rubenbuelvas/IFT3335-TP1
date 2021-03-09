@@ -50,8 +50,7 @@ class Sudoku:
         # Example: {'A1': '4', 'A2': '.', 'A3': '.', 'A4': '.', 'A5': '.', 'A6': '.', 'A7': '8', 'A8': '.', 'A9': ...
         chars = [c for c in grid if c in self.cols or c in '0.']
         assert len(chars) == 81
-        self.grid = dict(zip(self.squares, chars))
-        self.gv_init = None
+        self.gv_init = dict(zip(self.squares, chars))
         self.gv_current = None
         self.gv_conflicts = None
         self.total_conflicts = 0
@@ -253,25 +252,6 @@ class Sudoku:
             if r in 'CF': displaystring = displaystring + line + ('    ' + line if show_conflicts else '') + '\n'
         print(displaystring)
 
-    # def swap2numbers(gv_init, gv_current, conflicts_grid_values):
-    #     """Will take a square with a maximum number of conflicts and swap it randomly within the 3x3 unit with
-    #        another square that isn't part of the initial puzzle. Will then return the new grid_value"""
-    #
-    #     # Selects randomly one of the squares with the maximum number of conflicts
-    #     s_withmaxconflicts, maxconflicts = squares_causing_max_conflicts(gv_init, gv_current, conflicts_grid_values)
-    #     s1toswap = some(shuffled(s_withmaxconflicts)) # random selection
-    #
-    #     # Find another square within 3x3 unit and swap randomly without considering the number of conflicts (TO IMPROVE?)
-    #     s2toswap = some(shuffled(possible_replacements_within_unit(gv_init, s1toswap, 'unit3x3')))
-    #     s1value = gv_current[s1toswap]
-    #     gv_current[s1toswap] = gv_current[s2toswap]
-    #     gv_current[s2toswap] = s1value
-    #
-    #     if print_display != "nothing":
-    #         print(f"Swapped {s1toswap }={gv_current[s1toswap]} and {s2toswap}={gv_current[s2toswap]} (values after the swap)")
-    #
-    #     return gv_current
-
     # Search
     def solve(self, search_method, verbose=False):
         self.search_method = search_method
@@ -282,13 +262,15 @@ class Sudoku:
             self.display_gv(True)
 
         if self.search_method == 'Hill Climbing':
-            self.gv_current = self.improve_solution_hill_climb_calc_all_swaps3x3()
-            if verbose in ['init and final grids', 'all solution grids']: self.display_gv()
+            self.gv_current = self.improve_solution_hill_climb_calc_all_swaps3x3(verbose)
+            if verbose in ['init and final grids', 'all solution grids']:
+                self.display_gv()
         else:
             raise ValueError(
-                f'Unknown search method {self.search_method}. Available search methods are {self.search_methods}')
+                f'Unknown search method {self.search_method}. Available search methods are {self.search_methods}'
+            )
 
-    def improve_solution_hill_climb_calc_all_swaps3x3(self):
+    def improve_solution_hill_climb_calc_all_swaps3x3(self, verbose):
         """Receives a puzzle with conflicts and tries to decrease the number of conflicts by swapping 2 values
            using the Hill Climbing method.
            Will calculate total conflict for all possible swaps of a pair within a 3x3 unit and then choose the best"""
@@ -326,16 +308,17 @@ class Sudoku:
                     best_puzzle = test_puzzle
 
             if best_total_conflicts == current_total_conflicts:  # no improvement (local maximum or solution)
-                if print_display != 'nothing':
+                if verbose:
                     print(f'FINAL SOLUTION: found maximum with {best_total_conflicts} conflicts.')
                 return self.gv_current
             else:  # will try to improve
                 self.gv_current = best_puzzle
                 current_total_conflicts = best_total_conflicts
-                if print_display != 'nothing':
+                if verbose:
                     print(f'Swapping{pair} and total conflicts is now {best_total_conflicts}')
-                if print_display == 'all solution grids':
+                if verbose:
                     self.display_gv()
+
 
 # Utilities
 def some(seq):
@@ -389,23 +372,13 @@ def solve_all(grids, name='', showif=0.0, search_method='Hill Climbing'):
 
     if len_grids >= 1:
         print("Solved %d of %d %s puzzles in %.2f secs (avg %.2f secs (%d Hz), max %.2f secs). - %s" % (
-            sum(results), len_grids, name, sum(times), sum(times) / N, hz, max(times), search_method))
+            sum(results), len_grids, name, sum(times), sum(times) / len_grids, hz, max(times), search_method))
 
 
-################ Main routine ################
 if __name__ == '__main__':
-    test()
-
-    # Demo one sudoku with display of each step
-    grid2 = '4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......'
-    print_display_old = print_display
-    print_display = "all solution grids"
-    solve_grid_values(grid2, 'Hill Climbing')
-    print_display = print_display_old
-
     # Test with different files
-    solve_all(from_file("1puzzle.txt"), "1puzzle", 9.0, 'Hill Climbing')
-    solve_all(from_file("easy50.txt"), "easy50 ", 9.0, 'Hill Climbing')
+    solve_all(from_file("MesSudokus/1puzzle.txt"), "1puzzle", 9.0, 'Hill Climbing')
+    solve_all(from_file("MesSudokus/easy50.txt"), "easy50 ", 9.0, 'Hill Climbing')
     # solve_all(from_file("top95.txt"),      "top95  ", 9.0, 'Hill Climbing')
     # solve_all(from_file("hardest.txt"),    "hardest", 9.0, 'Hill Climbing')
     # solve_all(from_file("100sudoku.txt"),  "100puz ", 9.0, 'Hill Climbing')
