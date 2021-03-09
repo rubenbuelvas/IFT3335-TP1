@@ -135,10 +135,6 @@ class Sudoku:
                     set_initial_squares.add(r + c)
         return set_initial_squares
 
-    # Solve sudoku with hill climbing
-    def solve_hill(self):
-        pass
-
     def is_solved(self):
         # Returns True is puzzle is solved and False otherwise.
         return self.total_conflicts == 0
@@ -277,19 +273,20 @@ class Sudoku:
     #     return gv_current
 
     # Search
-    def solve_grid_values(self, print_display=False):
+    def solve(self, search_method, verbose=False):
+        self.search_method = search_method
         # Will solve a puzzle with the appropriate search method
         self.fill_grid_randomly()  # Fills all the 3x3 units randomly with unused numbers in unit
 
-        if print_display in ['init grid', 'init and final grids', 'all solution grids']:
+        if verbose in ['init grid', 'init and final grids', 'all solution grids']:
             self.display_gv(True)
 
         if self.search_method == 'Hill Climbing':
             self.gv_current = self.improve_solution_hill_climb_calc_all_swaps3x3()
-            if print_display in ["init and final grids", "all solution grids"]: self.display_gv()
+            if verbose in ['init and final grids', 'all solution grids']: self.display_gv()
         else:
             raise ValueError(
-                f"Unknown search method {self.search_method}. Available search methods are {self.search_methods}")
+                f'Unknown search method {self.search_method}. Available search methods are {self.search_methods}')
 
     def improve_solution_hill_climb_calc_all_swaps3x3(self):
         """Receives a puzzle with conflicts and tries to decrease the number of conflicts by swapping 2 values
@@ -340,32 +337,21 @@ class Sudoku:
                 if print_display == 'all solution grids':
                     self.display_gv()
 
-
-    # System test
-
-    def solved(self, values):
-        "A puzzle is solved if each unit is a permutation of the digits 1 to 9."
-
-        def unit_solved(unit):
-            return set(values[s] for s in unit) == set(self.digits)
-
-        return values is not False and all(unit_solved(unit) for unit in self.unit_list)
-
 # Utilities
 def some(seq):
-    "Return some element of seq that is true."
+    """Return some element of seq that is true."""
     for e in seq:
         if e: return e
     return False
 
 
 def from_file(filename, sep='\n'):
-    "Parse a file into a list of strings, separated by sep."
+    """Parse a file into a list of strings, separated by sep."""
     return open(filename).read().strip().split(sep)
 
 
 def shuffled(seq):
-    "Return a randomly shuffled copy of the input sequence."
+    """Return a randomly shuffled copy of the input sequence."""
     seq = list(seq)
     random.shuffle(seq)
     return seq
@@ -374,48 +360,36 @@ def shuffled(seq):
 # System test
 
 
-def solve_all(grids, name='', showif=0.0, searchMethod='ToSpecify'):
+def solve_all(grids, name='', showif=0.0, search_method='Hill Climbing'):
     """Attempt to solve a sequence of grids. Report results.
     When showif is a number of seconds, display puzzles that take longer.
     When showif is None, don't display any puzzles."""
 
     def time_solve(grid):
-        # start = time.clock()
         start = time.process_time()
-        if searchMethod == 'Hill Climbing':
-            gv_init, gv_current = solve_grid_values(grid, searchMethod)
-        else:
-            values = solve(grid, searchMethod)
+        sudoku = Sudoku(grid)
+        gv_init, gv_current = sudoku.solve(search_method)
         t = time.process_time() - start
-        #
-        ## Display puzzles that take long enough
+
+        # Display puzzles that take long enough
         if showif is not None and t > showif:
-            if searchMethod == 'Hill Climbing':
-                displaygridv(gv_init, gv_current)
-            else:
-                display(grid_values(grid))
-                if values: display(values)
+            sudoku.display_gv()
             print('(%.2f seconds)\n' % t)
 
-        if searchMethod == 'Hill Climbing':
-            return (t, is_solved(gv_init, gv_current))
-        else:
-            return (t, solved(values))
+        return t, sudoku.is_solved()
 
     times, results = zip(*[time_solve(grid) for grid in grids])
-    N = len(grids)
+    len_grids = len(grids)
 
     # Will avoid division by zero if time is too short (0.0).
     if sum(times) != 0.0:
-        hz = N / sum(times)
+        hz = len_grids / sum(times)
     else:
         hz = 999
 
-    if N >= 1:
+    if len_grids >= 1:
         print("Solved %d of %d %s puzzles in %.2f secs (avg %.2f secs (%d Hz), max %.2f secs). - %s" % (
-            sum(results), N, name, sum(times), sum(times) / N, hz, max(times), searchMethod))
-
-
+            sum(results), len_grids, name, sum(times), sum(times) / N, hz, max(times), search_method))
 
 
 ################ Main routine ################
