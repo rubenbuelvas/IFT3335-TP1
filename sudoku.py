@@ -139,7 +139,7 @@ def display(values):
 
 def solve(grid):
     if args.method == "hc":
-        return hill_climbing(parse_grid(grid))
+        return hill_climbing(grid_values(grid), fixed_values(grid))
 
     elif args.method == "dfs":
         return search(parse_grid(grid))
@@ -207,10 +207,9 @@ units3x3 = unitlist[18:]
 #linepeers = dict((s, set(sum(lineunits[s], [])) - set([s]))
 #             for s in squares)"
 
-def hill_climbing(values):
+def hill_climbing(values, fixed_values):
 
     state = random_fill(values) #current state
-    mutables = mutables_per_3x3(values) #positions where values are not fixed
     
     conflicts = nb_conflicts(state)
     if conflicts == 0: #solved!
