@@ -396,14 +396,13 @@ if __name__ == '__main__':
 
 
     # Test with different files
-    solve_all(from_file("MesSudokus/MyTestSudoku.txt"), "David Test", 0.0, 'Hill Climbing')
     solve_all(from_file("MesSudokus/NakedPair.txt"), "NakedPT", -1.0, 'Hill Climbing')
     solve_all(from_file("MesSudokus/1puzzle.txt"), "1puzzle", 9.0, 'Hill Climbing')
     solve_all(from_file("MesSudokus/easy50.txt"), "easy50 ", 9.0, 'Hill Climbing')
     solve_all(from_file("MesSudokus/top95.txt"),      "top95  ", 9.0, 'Hill Climbing')
     solve_all(from_file("MesSudokus/hardest.txt"),    "hardest", 9.0, 'Hill Climbing')
     solve_all(from_file("MesSudokus/100sudoku.txt"),  "100puz ", 9.0, 'Hill Climbing')
-    solve_all(from_file("MesSudokus/1000sudoku.txt"), "1000puz", 9.0, 'Hill Climbing')
+    #solve_all(from_file("MesSudokus/1000sudoku.txt"), "1000puz", 9.0, 'Hill Climbing')
 
 
 ## References used:
