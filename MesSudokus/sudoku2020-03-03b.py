@@ -61,9 +61,12 @@ def parse_grid(grid):
     return False if a contradiction is detected."""
     ## To start, every square can be any digit; then assign values from the grid.
     values = dict((s, digits) for s in squares)
+    print(f"Parse grid START: {values}") #DG REMOVE
     for s, d in grid_values(grid).items():
         if d in digits and not assign(values, s, d):
             return False  ## (Fail if we can't assign d to square s.)
+
+    print(f"Parse grid DONE: {values}")  # DG REMOVE
     return values
 
 
@@ -404,35 +407,36 @@ if __name__ == '__main__':
     # solve_all([random_puzzle() for _ in range(99)], "random", 100.0)
 
     # DG Added a parameter for search method. Note: decrease the decimal value in order to show longer puzzles
-    print('-----------')
-    solve_all(from_file("easy50.txt"), "easy50 ", 1.0, 'Brute Force')
-    solve_all(from_file("easy50.txt"), "easy50 ", 1.0, 'Norvig Heuristic')
-    solve_all(from_file("easy50.txt"), "easy50 ", 1.0, 'Norvig Improved')
-    print('-----------')
-    solve_all(from_file("top95.txt"), "top95  ", 1.0, 'Brute Force')
-    solve_all(from_file("top95.txt"), "top95  ", 1.0, 'Norvig Heuristic')
-    solve_all(from_file("top95.txt"), "top95  ", 1.0, 'Norvig Improved')
-    print('-----------')
-    solve_all(from_file("hardest.txt"), "hardest", 1.0, 'Brute Force')
-    solve_all(from_file("hardest.txt"), "hardest", 1.0, 'Norvig Heuristic')
-    solve_all(from_file("hardest.txt"), "hardest", 1.0, 'Norvig Improved')
-    print('-----------')
-    solve_all(from_file("100sudoku.txt"), "100puz ", 1.0, 'Brute Force')
-    solve_all(from_file("100sudoku.txt"), "100puz ", 1.0, 'Norvig Heuristic')
-    solve_all(from_file("100sudoku.txt"), "100puz ", 1.0, 'Norvig Improved')
-    print('-----------')
-    solve_all(from_file("1000sudoku.txt"), "1000puz", 1.0, 'Brute Force')
-    solve_all(from_file("1000sudoku.txt"), "1000puz", 1.0, 'Norvig Heuristic')
-    solve_all(from_file("1000sudoku.txt"), "1000puz", 1.0, 'Norvig Improved')
-    print('-----------')
-    solve_all(from_file("1puzzle.txt"), "1puzzle", 1.0, 'Brute Force')
-    solve_all(from_file("1puzzle.txt"), "1puzzle", 1.0, 'Norvig Heuristic')
-    solve_all(from_file("1puzzle.txt"), "1puzzle", 1.0, 'Norvig Improved')
-    print('-----------')
-    solve_all(from_file("NakedPair.txt"), "NakedPT", 1.0,
-              'Brute Force')  # DG file created from https://www.sudokuoftheday.com/techniques/naked-pairs-triples/
-    solve_all(from_file("NakedPair.txt"), "NakedPT", 1.0, 'Norvig Heuristic')
-    solve_all(from_file("NakedPair.txt"), "NakedPT", 1.0, 'Norvig Improved')
+    solve_all(from_file("NakedPair.txt"), "NakedPT", 1.0, 'Brute Force')
+    # print('-----------')
+    # solve_all(from_file("easy50.txt"), "easy50 ", 1.0, 'Brute Force')
+    # solve_all(from_file("easy50.txt"), "easy50 ", 1.0, 'Norvig Heuristic')
+    # solve_all(from_file("easy50.txt"), "easy50 ", 1.0, 'Norvig Improved')
+    # print('-----------')
+    # solve_all(from_file("top95.txt"), "top95  ", 1.0, 'Brute Force')
+    # solve_all(from_file("top95.txt"), "top95  ", 1.0, 'Norvig Heuristic')
+    # solve_all(from_file("top95.txt"), "top95  ", 1.0, 'Norvig Improved')
+    # print('-----------')
+    # solve_all(from_file("hardest.txt"), "hardest", 1.0, 'Brute Force')
+    # solve_all(from_file("hardest.txt"), "hardest", 1.0, 'Norvig Heuristic')
+    # solve_all(from_file("hardest.txt"), "hardest", 1.0, 'Norvig Improved')
+    # print('-----------')
+    # solve_all(from_file("100sudoku.txt"), "100puz ", 1.0, 'Brute Force')
+    # solve_all(from_file("100sudoku.txt"), "100puz ", 1.0, 'Norvig Heuristic')
+    # solve_all(from_file("100sudoku.txt"), "100puz ", 1.0, 'Norvig Improved')
+    # print('-----------')
+    # solve_all(from_file("1000sudoku.txt"), "1000puz", 1.0, 'Brute Force')
+    # solve_all(from_file("1000sudoku.txt"), "1000puz", 1.0, 'Norvig Heuristic')
+    # solve_all(from_file("1000sudoku.txt"), "1000puz", 1.0, 'Norvig Improved')
+    # print('-----------')
+    # solve_all(from_file("1puzzle.txt"), "1puzzle", 1.0, 'Brute Force')
+    # solve_all(from_file("1puzzle.txt"), "1puzzle", 1.0, 'Norvig Heuristic')
+    # solve_all(from_file("1puzzle.txt"), "1puzzle", 1.0, 'Norvig Improved')
+    # print('-----------')
+    # solve_all(from_file("NakedPair.txt"), "NakedPT", 1.0,
+    #           'Brute Force')  # DG file created from https://www.sudokuoftheday.com/techniques/naked-pairs-triples/
+    # solve_all(from_file("NakedPair.txt"), "NakedPT", 1.0, 'Norvig Heuristic')
+    # solve_all(from_file("NakedPair.txt"), "NakedPT", 1.0, 'Norvig Improved')
 
 ## References used:
 ## http://www.scanraid.com/BasicStrategies.htm

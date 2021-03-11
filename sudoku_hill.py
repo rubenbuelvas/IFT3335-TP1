@@ -50,9 +50,11 @@ class Sudoku:
         # Example: {'A1': '4', 'A2': '.', 'A3': '.', 'A4': '.', 'A5': '.', 'A6': '.', 'A7': '8', 'A8': '.', 'A9': ...
         chars = [c for c in grid if c in self.cols or c in '0.']
         assert len(chars) == 81
-        self.gv_init = dict(zip(self.squares, chars))
-        self.gv_current = self.gv_init
+        self.grid = grid
+        self.gv_init = self.grid_values()
+        self.gv_current = self.gv_init.copy() # Need to use function copy()
         self.gv_conflicts = None
+        self.conflictsDict = None
         self.total_conflicts = 0
         self.first_squares_of_unit3x3 = self.cross('ADG', '147')
         self.search_methods = {'Brute Force', 'Norvig Heuristic', 'Norvig Improved', 'Hill Climbing'}
@@ -78,6 +80,14 @@ class Sudoku:
                                     'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'A1', 'A3', 'B1', 'B3'}
 
         return 'All tests pass.'
+
+    ################ Parse a Grid ################
+    def grid_values(self):
+        """Convert grid into a dict of {square: char} with '0' or '.' for empties."""
+        # Example: {'A1': '4', 'A2': '.', 'A3': '.', 'A4': '.', 'A5': '.', 'A6': '.', 'A7': '8', 'A8': '.', 'A9': ...
+        chars = [c for c in self.grid if c in self.digits or c in '0.']
+        assert len(chars) == 81
+        return dict(zip(self.squares, chars))
 
     # Constraint functions
     def squares_causing_max_conflicts(self):
@@ -174,10 +184,10 @@ class Sudoku:
     def count_conflicts(self, grid):
         """Receives the initial grid and the current grid and returns a total evaluation of the
            conflicts in the grid (sum of all conflicts)"""
-        tmp, self.total_conflicts, tmp = self.eval_conflicts(grid)
+        tmp, self.total_conflicts, tmp = self.eval_conflicts()
         return self.total_conflicts
 
-    def eval_conflicts(self, grid):
+    def eval_conflicts(self):
         """Receives the initial grid and the current grid and returns:
            - # A grid_values of conflicts (dict of {square: nb_of_conflits}
            - A total evaluation of the conflicts in the grid (sum of all conflicts)
@@ -196,17 +206,17 @@ class Sudoku:
         for r in self.rows:
             for c in self.cols:
                 conflict_value = 0
-                if (self.gv_init[r + c] not in self.empty_digits) or (self.grid[r + c] in self.empty_digits):
+                if (self.gv_init[r + c] not in self.empty_digits) or (self.gv_current[r + c] in self.empty_digits):
                     conflict_value = 0  # square filled in the initial puzzle or current grid with empty digits
                 else:  # square randomly filled in the current grid
                     # Will calculate the number of conflict
                     # Conflicts in column and conflicts in line
                     u_column, u_line = self.units[r + c][0], self.units[r + c][1]
                     for s in u_column:
-                        if (s != r + c) and self.grid[s] == self.grid[r + c]:
+                        if (s != r + c) and self.gv_current[s] == self.gv_current[r + c]:
                             conflict_value += 1
                     for s in u_line:
-                        if (s != r + c) and self.grid[s] == self.grid[r + c]:
+                        if (s != r + c) and self.gv_current[s] == self.gv_current[r + c]:
                             conflict_value += 1
 
                 # Update dictionaries
@@ -215,6 +225,11 @@ class Sudoku:
                     conflicts_dict[conflict_value] = []  # List of squares (values) for this number of conflicts (key)
                 conflicts_dict[conflict_value].append(r + c)
                 conflictvaluestotal += conflict_value
+
+        self.gv_conflicts = conflicts_grid_values
+        self.total_conflicts = conflictvaluestotal
+        self.conflictsDict = conflicts_grid_values
+
         return conflicts_grid_values, conflictvaluestotal, conflicts_dict
 
     # Display as 2-D grid
@@ -378,14 +393,18 @@ def solve_all(grids, name='', showif=0.0, search_method='Hill Climbing'):
 
 
 if __name__ == '__main__':
+
+
     # Test with different files
+    solve_all(from_file("MesSudokus/MyTestSudoku.txt"), "David Test", 0.0, 'Hill Climbing')
+    solve_all(from_file("MesSudokus/NakedPair.txt"), "NakedPT", -1.0, 'Hill Climbing')
     solve_all(from_file("MesSudokus/1puzzle.txt"), "1puzzle", 9.0, 'Hill Climbing')
     solve_all(from_file("MesSudokus/easy50.txt"), "easy50 ", 9.0, 'Hill Climbing')
-    # solve_all(from_file("top95.txt"),      "top95  ", 9.0, 'Hill Climbing')
-    # solve_all(from_file("hardest.txt"),    "hardest", 9.0, 'Hill Climbing')
-    # solve_all(from_file("100sudoku.txt"),  "100puz ", 9.0, 'Hill Climbing')
-    # solve_all(from_file("1000sudoku.txt"), "1000puz", 9.0, 'Hill Climbing')
-    # solve_all(from_file("NakedPair.txt"),  "NakedPT", 9.0, 'Hill Climbing')
+    solve_all(from_file("MesSudokus/top95.txt"),      "top95  ", 9.0, 'Hill Climbing')
+    solve_all(from_file("MesSudokus/hardest.txt"),    "hardest", 9.0, 'Hill Climbing')
+    solve_all(from_file("MesSudokus/100sudoku.txt"),  "100puz ", 9.0, 'Hill Climbing')
+    solve_all(from_file("MesSudokus/1000sudoku.txt"), "1000puz", 9.0, 'Hill Climbing')
+
 
 ## References used:
 ## http://www.scanraid.com/BasicStrategies.htm
