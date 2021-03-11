@@ -206,7 +206,12 @@ def naked_pairs(values):
 
 
 ################ Hill Climbing ################
-lineslist = unitlist[0:18]
+linelist = unitlist[0:18]
+lines = dict(zip(cols+rows, unitlist[0:18]))
+#rows_dict = {(r, linelist[9:]) for r in rows}
+#cols_dict = {(c, linelist[0:9]) for c in cols}
+#lines = dict((s, [u for u in linelist if s in u])
+             #for s in squares)
 units3x3 = unitlist[18:] 
 
 
@@ -221,13 +226,16 @@ def hill_climbing(values):
     constraints = values               #initial parsed grid serves as constraints
     state = random_fill(values.copy()) #state initialization
     conflicts = nb_conflicts(state)    #nb of conflicts in current state
+
+    print("***initial grid***")
+    display(state)
     
     if conflicts == 0:   #solved!
         return state
     
     while (True):
         max_improvement = 0
-        best_next_state = None 
+        a, b = None, None
 
         for unit in units3x3:
             #go through all possible pairs to swap
@@ -238,19 +246,19 @@ def hill_climbing(values):
                     for s2 in [s2 for s2 in unit[i+1:] if len(constraints[s2]) > 1]:
                         if (state[s1] in constraints[s2] and state[s2] in constraints[s1]):
                             #calculate improvement from swapping (s1, s2)
-                            next_state = state.copy()
-                            #swap values of pair s1 s2
-                            next_state[s1], next_state[s2] = state[s2], state[s1]
-                            improvement = conflicts - nb_conflicts(next_state)
+                            improvement = net_improvement_from_swap(state, s1, s2)
 
                             if improvement > max_improvement:
                                 max_improvement = improvement
-                                best_next_state = next_state
+                                a, b = s1, s2
 
         if max_improvement: #found improvement
-            state = best_next_state
+            print("\nswapping {}, {}".format(a,b))
             conflicts -= max_improvement
+            state[a], state[b] = state[b], state[a]
 
+            display(state)
+            
             # if no conflicts => sudoku is solved. otherwise keep improving state
             if conflicts == 0:
                 break
@@ -261,12 +269,38 @@ def hill_climbing(values):
     #algorithm has ended when it can no longer improve score
     return state
 
+def net_improvement_from_swap(values, s1, s2):
+    improvement = 0
+
+    if s1[0] != s2[0]:
+        r = [values[s] for s in lines[s1[0]]] # row 1
+        improvement += 1 if values[s2] not in r else -1
+        improvement += 1 if r.count(values[s1]) > 1 else -1
+        r = [values[s] for s in lines[s2[0]]] # row  2
+        improvement += 1 if values[s1] not in r else -1
+        improvement += 1 if r.count(values[s2]) > 1 else -1
+
+    if s1[1] != s2[1]:
+        c = [values[s] for s in lines[s1[1]]] # col 1
+        improvement += 1 if values[s2] not in c else -1
+        improvement += 1 if c.count(values[s1]) > 1 else -1
+        c = [values[s] for s in lines[s2[1]]] # col 2  
+        improvement += 1 if values[s1] not in c else -1
+        improvement += 1 if c.count(values[s2]) > 1 else -1
+
+    return improvement
+        
+        
+
+def nb_missing_digits(arr):
+    missing = sum([d not in arr for d in digits])
+    return missing
 
 def nb_conflicts(values):
     """number of conflicts i.e. the total number of missing digits per unit
     in the entire grid """
     conflicts = 0
-    for unit in lineslist:
+    for unit in unitlist:
         #conflicts = nb of missing digits in line
         values_in_unit = [values[s] for s in unit]
         conflicts += len([d for d in digits if d not in values_in_unit])
@@ -398,7 +432,7 @@ if __name__ == '__main__':
     
     
     test()
-    solve_all(from_file("top95.txt"), "95sudoku", 0.1)
+    #solve_all(from_file("top95.txt"), "95sudoku", 0.1)
     # solve_all(from_file("easy50.txt", '========'), "easy", None)
     #solve_all(from_file("easy50.txt", '========'), "easy", None)
     #solve_all(from_file("top95.txt"), "hard", None)
@@ -406,8 +440,8 @@ if __name__ == '__main__':
     #solve_all([random_puzzle() for _ in range(100)], "random", 100.0)
     #solve_all(from_file("10_5sudoku.txt"),"", None)
     #solve_all(from_file("test.txt"), "", None)
-    #values = solve(grid2)
-    #print("number of conflicts left=\t", nb_conflicts(values))
+    values = solve(grid2)
+    print("number of conflicts left=\t", nb_conflicts(values))
     
 
 ## References used:
