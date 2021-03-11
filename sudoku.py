@@ -229,6 +229,7 @@ def hill_climbing(values):
 
     print("***initial grid***")
     display(state)
+    print("initial nb of conflicts", nb_conflicts(state))
     
     if conflicts == 0:   #solved!
         return state
@@ -271,31 +272,26 @@ def hill_climbing(values):
 
 def net_improvement_from_swap(values, s1, s2):
     improvement = 0
+    for i in range(2):        #for rows, columns
+        if s1[i] != s2[i]:    #if the pair doesn't share lines
+            
+            l = [values[s] for s in lines[s1[i]]] # line of s1
+            
+            #if s2 was not in s1's line, then the swap will improve the state
+            improvement += 1 if values[s2] not in l else -1
+            
+            #if s1 was a duplicate digit in its line, the swap will improve the state
+            improvement += 1 if l.count(values[s1]) > 1 else -1
 
-    if s1[0] != s2[0]: #if the pair don't share rows
-        l = [values[s] for s in lines[s1[0]]] # row 1
-        improvement += 1 if values[s2] not in l else -1
-        improvement += 1 if l.count(values[s1]) > 1 else -1
-        l = [values[s] for s in lines[s2[0]]] # row  2
-        improvement += 1 if values[s1] not in l else -1
-        improvement += 1 if l.count(values[s2]) > 1 else -1
-
-    if s1[1] != s2[1]:
-        l = [values[s] for s in lines[s1[1]]] # col 1
-        improvement += 1 if values[s2] not in l else -1
-        improvement += 1 if l.count(values[s1]) > 1 else -1
-        l = [values[s] for s in lines[s2[1]]] # col 2  
-        improvement += 1 if values[s1] not in l else -1
-        improvement += 1 if l.count(values[s2]) > 1 else -1
+            #do the same for the line of s2
+            l = [values[s] for s in lines[s2[i]]]             
+            improvement += 1 if values[s1] not in l else -1
+            improvement += 1 if l.count(values[s2]) > 1 else -1
 
     return improvement
         
         
-
-def nb_missing_digits(arr):
-    missing = sum([d not in arr for d in digits])
-    return missing
-
+#not used in hill-climbing except to compare values before and after running algorithm
 def nb_conflicts(values):
     """number of conflicts i.e. the total number of missing digits per unit
     in the entire grid """
