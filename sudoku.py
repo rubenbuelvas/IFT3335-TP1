@@ -14,6 +14,7 @@
 ##   values is a dict of possible values, e.g. {'A1':'12349', 'A2':'8', ...}
 
 import argparse
+import copy
 
 
 def cross(A, B):
@@ -123,8 +124,14 @@ def display(values):
 
 ################ Search ################
 
-def solve(grid): return search(parse_grid(grid))
+def solve(grid):
+    if args.method == "hc":
+        return hill_climbing(random_fill(grid_values(grid)), fixed_values(grid))
 
+    elif args.method == "dfs":
+        return search(parse_grid(grid))
+
+    
 def search(values):
     """Using depth-first search and propagation, try all possible values."""
     if values is False:
@@ -132,11 +139,10 @@ def search(values):
     if all(len(values[s]) == 1 for s in squares):
         return values ## Solved!
 
-
     if (args.heuristic == 'random'):
         s = random_square(values)
-    elif (args.heuristic == 'norwig'):
-        s = norwig(values)
+    elif (args.heuristic == 'norvig'):
+        s = norvig(values)
     elif (args.heuristic == 'naked_pairs'):
         s = naked_pairs(values)
     #else raise ValueError
@@ -149,7 +155,6 @@ def search(values):
                 #for d in values[s])
 
 
-                
 def random_square(values):
     """choose a random unfilled square"""
     s = random.choice(squares)
@@ -158,7 +163,7 @@ def random_square(values):
     return s
 
 
-def norwig(values):
+def norvig(values):
     """Choose the unfilled square s with the fewest possibilities"""
     n,s = min((len(values[s]), s) for s in squares if len(values[s]) > 1)
 
@@ -167,7 +172,7 @@ def norwig(values):
 
 def naked_pairs(values):
     """choose a square belonging to naked pairs.
-    If no naked pairs are found, use norwig"""
+    If no naked pairs are found, use norvig"""
     #all squares having two candidate digits
     two_digits = {s:d for s,d in values.items() if len(d) == 2}
     while(two_digits):
@@ -176,26 +181,132 @@ def naked_pairs(values):
         if any({k:v for k,v in two_digits.items() if v==d and k in peers[s]}) :
             return s
    
-    return norwig(values)
+    return norvig(values)
 
+
+
+################ Hill Climbing ################
+lineslist = unitlist[0:18]
+lines = dict(zip(rows+cols, lineslist)) 
+lineunits =  dict((s, [l for l in lineslist if s in l])
+                  for s in squares)
+units3x3 = unitlist[18:] 
+#linepeers = dict((s, set(sum(lineunits[s], [])) - set([s]))
+#             for s in squares)"
+
+def hill_climbing(state, fixed_values):
+    
+    conflicts = nb_conflicts(state)
+    if conflicts == 0:
+        return state
+    
+    improved = True
+    while (improved):
+    #check if nb of conflicts can be improved
+    #if a swap can improve nb of conflicts, execute it
+        improved = False 
+        max_improvement = 0
+        #best_pair = (None, None)
+        best_next_state = None
+        for unit in units3x3:
+            for i in range(8):
+                if not fixed_values[unit[i]]:
+                    s1 = unit[i]
+                    for s2 in unit[i+1:]:
+                        if not fixed_values[s2]:
+                            next_state = state.copy()
+                            #swap values of pair s1 s2
+                            next_state[s1], next_state[s2] = state[s2], state[s1]
+                            improvement = conflicts - nb_conflicts(next_state)
+                        
+                            if improvement > max_improvement:
+                                max_improvement = improvement
+                                best_next_state = next_state
+        if max_improvement:
+            state = best_next_state
+            conflicts -= max_improvement
+            
+            if conflicts != 0: # conflicts == 0 => sudoku is solved. otherwise keep improving
+                improved = True
+                    
+        #for unit in mutables:
+        #    for i in len(unit)-1:
+        #        improvement = 0
+        #        s1 = unit[i]
+        #        for s2 in unit[i:]:"
+
+    #algorithm has ended when it can no longer improve score
+    #print("remaining conflicts:\t", conflicts)
+    return state
+
+
+#def improve(state, fixed_values, nb_conflicts):
+    
+
+#def nb_conflicts(line_values):
+#    """count nb of conflicts in a unit"""
+#    pass
+    
 """
-def naked_pairs2(values):
-    "Naked pairs with elimination.
-    Choose a square belonging to naked pairs.
-    If no naked pairs are found, use norwig"
-    #if a square has two candidates, check if it forms naked pair with a peer
-    for s,v in {s:v for s,v in values.items() if len(v) == 2}.items():
-        for u in units[s]:
-            for p in u: 
-                if values[p] == v and p != s:
-                    for o in set(set(u)-set([s, p])):
-                        eliminate(values, o, v[0]) 
-                        eliminate(values, o, v[1])
-                        return s
+def net_improvement_from_swap(s1, s2, state):
+    #count nb of conflicts that would be generated in the rows and columns that
+    #s1 and s2 belong to if their values were swapped
+    current_conflicts = 0
 
-    return norwig(values)
+    conflicts = 0
+    for line in lineunits[s1]:
+        #evaluate a line, with value d at square
+        line_values = [values[s] for s in lines if s != square]
+        line_values.append(v)
+        #conflicts = nb of missing digits in line        
+        conflicts += sum[(d in linevalues) for d in digits]
+    return conflicts
 """
 
+def nb_conflicts(values):
+    """number of conflicts in the grid under assumption that there are no conflict within the 3x3 units"""
+    conflicts = 0
+    for line in lineslist:
+        #conflicts = nb of missing digits in line
+        line_values = [state[s] for s in line]
+        conflicts += len([d for d in digits if d not in line_values])
+
+    return conflicts
+        
+
+def fixed_values(grid):
+    """returns a dict of square:bool that indicates which squares 
+    have fixed (i.e.initial) values"""
+    fixed = [c not in '0.' for c in grid if c in digits or c in '0.']
+    assert len(fixed) == 81
+    return dict(zip(squares, fixed))
+
+
+#not used rn
+def mutables_per_3x3(values):
+    """lists of mutable(i.e. not initial) values per 3x3 units """
+    mutables = []
+    # for each 3x3 unit
+    for i in range(0,9):
+        mutables[i] = [values[s] for s in units3x3[i] if values[s] in '.0']
+                 
+    return mutables
+    
+
+    
+def random_fill(values):
+    """returns a dict of values where the non-fixed (i.e. positions with '0' or '.' initially)
+    positions are filled with random digits. Each 3x3 unit will be filled without conflict"""
+    for unit in units3x3:
+        #list digits that are not fixed in unit and put them in random order  
+        ds = shuffled([d for d in digits
+                       if d not in [values[k] for k in unit]])
+        for s in unit:
+            #assign a digit to each square in unit
+            if values[s] in '.0':
+                values[s] = ds.pop()
+    return values
+    
 
 ################ Utilities ################
 
@@ -233,25 +344,32 @@ def solve_all(grids, name='', showif=0.0):
         start = time.process_time()
         values = solve(grid)
         t = time.process_time() - start
+        conflicts = 0
+        # Keep a count of unresolved conflicts for hill-climbing method
+        if args.method == 'hc':
+            conflicts = nb_conflicts(values)
         ## Display puzzles that take long enough
         if showif is not None and t > showif:
             display(grid_values(grid))
             print("\n")
             if values: display(values)
             print('(%.2f seconds)\n' % t)
-        return (t, solved(values))
+        return (t, solved(values), conflicts)
 
-    times, results = zip(*[time_solve(grid) for grid in grids])
+    times, results, conflicts = zip(*[time_solve(grid) for grid in grids])
     
     N = len(grids)
     if N > 1:
         print("Solved %d of %d %s puzzles (avg %.2f secs (%d Hz), max %.2f secs)." % (
             sum(results), N, name, sum(times) / N, N / sum(times), max(times)))
+        if args.method == "hc":
+            print("number of conflicts remaining after solve attempt with Hill-Climbing: 
+                   avg %.2f, min %i, max %i"%(
+                       sum(conflicts)/N, min(conflicts), max(conflicts)))
 
 
 def solved(values):
     """A puzzle is solved if each unit is a permutation of the digits 1 to 9."""
-
     def unitsolved(unit): return set(values[s] for s in unit) == set(digits)
 
     return values is not False and all(unitsolved(unit) for unit in unitlist)
@@ -278,18 +396,30 @@ hard1 = '.....6....59.....82....8....45........3........6..3.54...325..6........
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('heuristic', choices=['random', 'norwig', 'naked_pairs'], default='random', help='choice of heuristics fonction')
+    parser.add_argument('--heuristic',
+                        default='random',
+                        choices=['random', 'norvig', 'naked_pairs'],
+                        help='choice of heuristics fonction')
+    parser.add_argument('method',
+                        choices=['dfs','hc'],
+                        help='available methods are:\n
+                        -Depth-first-search with a choice of heuristic function;\n 
+                        -Hill-climbing.')
     args = parser.parse_args()
     
+    
     test()
-    solve_all(from_file("top95.txt"), "95sudoku", 0.1)
+    #solve_all(from_file("top95.txt"), "95sudoku", 0.1)
     # solve_all(from_file("easy50.txt", '========'), "easy", None)
     #solve_all(from_file("easy50.txt", '========'), "easy", None)
     #solve_all(from_file("top95.txt"), "hard", None)
     #solve_all(from_file("hardest.txt"), "hardest", None)
-    #solve_all([random_puzzle() for _ in range(99)], "random", 100.0)
+    #solve_all([random_puzzle() for _ in range(1000)], "random", 100.0)
     #solve_all(from_file("10_5sudoku.txt"),"", None)
     #solve_all(from_file("test.txt"), "hard", None)
+    #values = solve(grid1)
+    #print("number of conflicts left=\t", nb_conflicts(values))
+    solve_all(from_file("top95.txt"), "95sudoku", None)
     
 
 ## References used:
