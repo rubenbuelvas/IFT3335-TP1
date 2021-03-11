@@ -1,4 +1,17 @@
 
+
+## example use from commandline
+##
+## for depth-first-search:
+## `python sudoku.py dfs --heuristic [option]`
+## where option = ['random', 'norvig', 'naked_pairs']
+##
+## for hill-climbing:
+## `python sudoku.py hc`
+
+
+
+
 ## Solve Every Sudoku Puzzle
 
 ## See http://norvig.com/sudoku.html
@@ -208,19 +221,22 @@ def hill_climbing(values):
         improved = False 
         max_improvement = 0
         best_next_state = None
-        
-        for unit in mutables:
-            #for each unit, evaluate improvement for all possible swaps
-            for i in len(unit-1):
-                s1 = unit[i]
-                for s2 in unit[i+1:]:
-                    next_state = state.copy()
-                    #swap values of pair (s1, s2)
-                    next_state[s1], next_state[s2] = state[s2], state[s1]
-                    improvement = conflicts - nb_conflicts(next_state)
-                    if improvement > max_improvement:
-                        max_improvement = improvement
-                        best_next_state = next_state
+
+        for unit in units3x3:
+            for i in range(len(unit)-1):
+                if not fixed_values[unit[i]]:
+                    s1 = unit[i]
+                    for s2 in unit[i+1:]:
+                        if not fixed_values[s2]:
+                            next_state = state.copy()
+                            #swap values of pair s1 s2
+                            next_state[s1], next_state[s2] = state[s2], state[s1]
+                            improvement = conflicts - nb_conflicts(next_state)
+                        
+                            if improvement > max_improvement:
+                                max_improvement = improvement
+                                best_next_state = next_state
+
         if max_improvement:
             state = best_next_state
             conflicts -= max_improvement
@@ -229,41 +245,19 @@ def hill_climbing(values):
                 improved = True
 
     #algorithm has ended when it can no longer improve score
-    #print("remaining conflicts:\t", conflicts)
     return state
 
-
-
-#def nb_conflicts(line_values):
-#    """count nb of conflicts in a unit"""
-#    pass
-    
-"""
-def net_improvement_from_swap(s1, s2, state):
-    #count nb of conflicts that would be generated in the rows and columns that
-    #s1 and s2 belong to if their values were swapped
-    current_conflicts = 0
-
-    conflicts = 0
-    for line in lineunits[s1]:
-        #evaluate a line, with value d at square
-        line_values = [values[s] for s in lines if s != square]
-        line_values.append(v)
-        #conflicts = nb of missing digits in line        
-        conflicts += sum[(d in linevalues) for d in digits]
-    return conflicts
-"""
 
 def nb_conflicts(values):
     """number of conflicts in the grid under assumption that there are no conflict within the 3x3 units"""
     conflicts = 0
     for line in lineslist:
         #conflicts = nb of missing digits in line
-        line_values = [state[s] for s in line]
+        line_values = [values[s] for s in line]
         conflicts += len([d for d in digits if d not in line_values])
 
     return conflicts
-        
+
 
 def fixed_values(grid):
     """returns a dict of square:bool that indicates which squares 
@@ -282,9 +276,8 @@ def mutables_per_3x3(values):
         mutables[i] = [values[s] for s in units3x3[i] if values[s] in '.0']
                  
     return mutables
-    
 
-    
+
 def random_fill(values):
     """returns a dict of values where the non-fixed (i.e. positions with '0' or '.' initially)
     positions are filled with random digits. Each 3x3 unit will be filled without conflict"""
@@ -297,7 +290,7 @@ def random_fill(values):
             if values[s] in '.0':
                 values[s] = ds.pop()
     return values
-    
+
 
 ################ Utilities ################
 
@@ -354,8 +347,7 @@ def solve_all(grids, name='', showif=0.0):
         print("Solved %d of %d %s puzzles (avg %.2f secs (%d Hz), max %.2f secs)." % (
             sum(results), N, name, sum(times) / N, N / sum(times), max(times)))
         if args.method == "hc":
-            print("number of conflicts remaining after solve attempt with Hill-Climbing:"
-                  + " avg %.2f, min %i, max %i"%(
+            print("number of conflicts remaining after solve attempt with Hill-Climbing: avg %.2f, min %i, max %i"%(
                        sum(conflicts)/N, min(conflicts), max(conflicts)))
 
 
@@ -393,7 +385,8 @@ if __name__ == '__main__':
                         help='choice of heuristics fonction')
     parser.add_argument('method',
                         choices=['dfs','hc'],
-                        help='available methods are:\n-Depth-first-search with a choice of heuristic function; \n-Hill-climbing.')
+
+                        help='available methods are:\n-Depth-first-search with a choice of heuristic function;\n-Hill-climbing.')
     args = parser.parse_args()
     
     
