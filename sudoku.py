@@ -88,19 +88,25 @@ def grid_values(grid):
 
 ################ Constraint Propagation ################
 
-def assign(values, s, d):
+def assign(values, s, d, unit=None):
     """Eliminate all the other values (except d) from values[s] and propagate.
     Return values, except return False if a contradiction is detected."""
     other_values = values[s].replace(d, '')
-    if all(eliminate(values, s, d2) for d2 in other_values):
+    if all(eliminate(values, s, d2, unit) for d2 in other_values):
         return values
     else:
         return False
 
 
-def eliminate(values, s, d):
+def eliminate(values, s, d, unit=None):
     """Eliminate d from values[s]; propagate when values or places <= 2.
     Return values, except return False if a contradiction is detected."""
+    p = peers[s]
+    units_to_check = units[s]
+    if unit:
+        p = [s2 for s2 in unit if s2 != s]
+        units_to_check = [unit]
+    
     if d not in values[s]:
         return values  ## Already eliminated
     values[s] = values[s].replace(d, '')
@@ -109,16 +115,16 @@ def eliminate(values, s, d):
         return False  ## Contradiction: removed last value
     elif len(values[s]) == 1:
         d2 = values[s]
-        if not all(eliminate(values, s2, d2) for s2 in peers[s]):
+        if not all(eliminate(values, s2, d2, unit) for s2 in p):
             return False
     ## (2) If a unit u is reduced to only one place for a value d, then put it there.
-    for u in units[s]:
+    for u in units_to_check:
         dplaces = [s for s in u if d in values[s]]
         if len(dplaces) == 0:
             return False  ## Contradiction: no place for this value
         elif len(dplaces) == 1:
             # d can only be in one place in unit; assign it there
-            if not assign(values, dplaces[0], d):
+            if not assign(values, dplaces[0], d, unit):
                 return False
     return values
 
@@ -139,7 +145,7 @@ def display(values):
 
 def solve(grid):
     if args.method == "hc":
-        return hill_climbing(random_fill(grid_values(grid)), fixed_values(grid))
+        return hill_climbing(parse_grid(grid))
 
     elif args.method == "dfs":
         return search(parse_grid(grid))
@@ -200,33 +206,32 @@ def naked_pairs(values):
 
 ################ Hill Climbing ################
 lineslist = unitlist[0:18]
-lines = dict(zip(rows+cols, lineslist)) 
-lineunits =  dict((s, [l for l in lineslist if s in l])
-                  for s in squares)
+#lines = dict(zip(rows+cols, lineslist)) 
+#lineunits =  dict((s, [l for l in lineslist if s in l])
+                 # for s in squares)
 units3x3 = unitlist[18:] 
 #linepeers = dict((s, set(sum(lineunits[s], [])) - set([s]))
 #             for s in squares)"
 
-def hill_climbing(state, fixed_values):
-    
+def hill_climbing(values):
+    constraints = values #initial parsed grid serves as constraints
+    state = random_fill(values.copy()) #current state. initially filled with random values
     conflicts = nb_conflicts(state)
-    if conflicts == 0:
+    if conflicts == 0: #solved!
         return state
     
-    improved = True
-    while (improved):
+    while (True):
     #check if nb of conflicts can be improved
     #if a swap can improve nb of conflicts, execute it
-        improved = False 
         max_improvement = 0
-        #best_pair = (None, None)
         best_next_state = None
         for unit in units3x3:
             for i in range(len(unit)-1):
-                if not fixed_values[unit[i]]:
+                #if more than one digit is possible in this square, pick as s1
+                if len(constraints[unit[i]]) > 1: 
                     s1 = unit[i]
                     for s2 in unit[i+1:]:
-                        if not fixed_values[s2]:
+                        if len(constraints[unit[i]]) > 1:
                             next_state = state.copy()
                             #swap values of pair s1 s2
                             next_state[s1], next_state[s2] = state[s2], state[s1]
@@ -238,59 +243,51 @@ def hill_climbing(state, fixed_values):
         if max_improvement:
             state = best_next_state
             conflicts -= max_improvement
+
+            # if no conflicts => sudoku is solved. otherwise keep improving state
+            if conflicts == 0:
+                break
             
-            if conflicts != 0: # conflicts == 0 => sudoku is solved. otherwise keep improving
-                improved = True
-                    
+        else:#else there was no improvement from previous state
+            break
 
     #algorithm has ended when it can no longer improve score
-    #print("remaining conflicts:\t", conflicts)
     return state
 
 
-
 def nb_conflicts(values):
-    """number of conflicts in the grid under assumption that there are no conflict within the 3x3 units"""
+    """number of conflicts i.e. the total number of missing digits per unit
+    in the entire grid """
     conflicts = 0
-    for line in lineslist:
+    for unit in lineslist:
         #conflicts = nb of missing digits in line
-        line_values = [values[s] for s in line]
-        conflicts += len([d for d in digits if d not in line_values])
-
+        values_in_unit = [values[s] for s in unit]
+        conflicts += len([d for d in digits if d not in values_in_unit])
     return conflicts
 
 
-def fixed_values(grid):
-    """returns a dict of square:bool that indicates which squares 
-    have fixed (i.e.initial) values"""
-    fixed = [c not in '0.' for c in grid if c in digits or c in '0.']
-    assert len(fixed) == 81
-    return dict(zip(squares, fixed))
-
-
-#not used rn
-def mutables_per_3x3(values):
-    """lists of mutable(i.e. not initial) values per 3x3 units """
-    mutables = []
-    # for each 3x3 unit
-    for i in range(0,9):
-        mutables[i] = [values[s] for s in units3x3[i] if values[s] in '.0']
-                 
-    return mutables
-
 
 def random_fill(values):
-    """returns a dict of values where the non-fixed (i.e. positions with '0' or '.' initially)
-    positions are filled with random digits. Each 3x3 unit will be filled without conflict"""
+    """fill each 3x3 unit randomly in such a way that there are no conflict 
+    within each unit"""
     for unit in units3x3:
-        #list digits that are not fixed in unit and put them in random order  
-        ds = shuffled([d for d in digits
-                       if d not in [values[k] for k in unit]])
-        for s in unit:
-            #assign a digit to each square in unit
-            if values[s] in '.0':
-                values[s] = ds.pop()
+        values = random_fill_unit(values,unit)
     return values
+
+
+def random_fill_unit(values, unit):
+    """fill a unit with random numbers, without conflict within that unit"""
+    if values is False:
+        return False
+    
+    if all(len(values[s]) == 1 for s in unit):
+        return values #unit is filled
+    
+    s = random.choice([s for s in unit if len(values[s]) > 1])
+        
+    return some(random_fill_unit(assign(values.copy(), s, d, unit),unit)
+                                 for d in shuffled(values[s]))
+                                
 
 
 ################ Utilities ################
@@ -359,6 +356,8 @@ def solved(values):
     return values is not False and all(unitsolved(unit) for unit in unitlist)
 
 
+
+
 def random_puzzle(N=17):
     """Make a random puzzle with N or more assignments. Restart on contradictions.
     Note the resulting puzzle is not guaranteed to be solvable, but empirically
@@ -391,17 +390,16 @@ if __name__ == '__main__':
     
     
     test()
-    #solve_all(from_file("top95.txt"), "95sudoku", 0.1)
+    solve_all(from_file("top95.txt"), "95sudoku", 0.1)
     # solve_all(from_file("easy50.txt", '========'), "easy", None)
     #solve_all(from_file("easy50.txt", '========'), "easy", None)
     #solve_all(from_file("top95.txt"), "hard", None)
     #solve_all(from_file("hardest.txt"), "hardest", None)
-    #solve_all([random_puzzle() for _ in range(1000)], "random", 100.0)
+    #solve_all([random_puzzle() for _ in range(100)], "random", 100.0)
     #solve_all(from_file("10_5sudoku.txt"),"", None)
-    #solve_all(from_file("test.txt"), "hard", None)
-    #values = solve(grid1)
+    #solve_all(from_file("test.txt"), "", None)
+    #values = solve(grid2)
     #print("number of conflicts left=\t", nb_conflicts(values))
-    solve_all(from_file("top95.txt"), "95sudoku", None)
     
 
 ## References used:
