@@ -232,16 +232,17 @@ def hill_climbing(values):
         for unit in units3x3:
             #go through all possible pairs to swap
             for i in range(len(unit)-1):
-                if len(constraints[unit[i]]) > 1: 
+                if len(constraints[unit[i]]) > 1:
                     s1 = unit[i]
-                    for s2 in unit[i+1:]:
-                        if len(constraints[s2]) > 1:
+                    
+                    for s2 in [s2 for s2 in unit[i+1:] if len(constraints[s2]) > 1]:
+                        if (state[s1] in constraints[s2] and state[s2] in constraints[s1]):
                             #calculate improvement from swapping (s1, s2)
                             next_state = state.copy()
                             #swap values of pair s1 s2
                             next_state[s1], next_state[s2] = state[s2], state[s1]
                             improvement = conflicts - nb_conflicts(next_state)
-                        
+
                             if improvement > max_improvement:
                                 max_improvement = improvement
                                 best_next_state = next_state
