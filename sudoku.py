@@ -272,21 +272,21 @@ def hill_climbing(values):
 def net_improvement_from_swap(values, s1, s2):
     improvement = 0
 
-    if s1[0] != s2[0]:
-        r = [values[s] for s in lines[s1[0]]] # row 1
-        improvement += 1 if values[s2] not in r else -1
-        improvement += 1 if r.count(values[s1]) > 1 else -1
-        r = [values[s] for s in lines[s2[0]]] # row  2
-        improvement += 1 if values[s1] not in r else -1
-        improvement += 1 if r.count(values[s2]) > 1 else -1
+    if s1[0] != s2[0]: #if the pair don't share rows
+        l = [values[s] for s in lines[s1[0]]] # row 1
+        improvement += 1 if values[s2] not in l else -1
+        improvement += 1 if l.count(values[s1]) > 1 else -1
+        l = [values[s] for s in lines[s2[0]]] # row  2
+        improvement += 1 if values[s1] not in l else -1
+        improvement += 1 if l.count(values[s2]) > 1 else -1
 
     if s1[1] != s2[1]:
-        c = [values[s] for s in lines[s1[1]]] # col 1
-        improvement += 1 if values[s2] not in c else -1
-        improvement += 1 if c.count(values[s1]) > 1 else -1
-        c = [values[s] for s in lines[s2[1]]] # col 2  
-        improvement += 1 if values[s1] not in c else -1
-        improvement += 1 if c.count(values[s2]) > 1 else -1
+        l = [values[s] for s in lines[s1[1]]] # col 1
+        improvement += 1 if values[s2] not in l else -1
+        improvement += 1 if l.count(values[s1]) > 1 else -1
+        l = [values[s] for s in lines[s2[1]]] # col 2  
+        improvement += 1 if values[s1] not in l else -1
+        improvement += 1 if l.count(values[s2]) > 1 else -1
 
     return improvement
         
@@ -426,10 +426,14 @@ if __name__ == '__main__':
                         help='choice of heuristics fonction')
     parser.add_argument('method',
                         choices=['dfs','hc'],
-
+                        default = 'dfs',
                         help='available methods are:\n-Depth-first-search with a choice of heuristic function;\n-Hill-climbing.')
-    args = parser.parse_args()
     
+    #args = parser.parse_args()
+
+    #set commandline arguments 
+    args = parser.parse_args(['hc']) #for hill climbing
+    #args = parser.parse_args(['dfs', '--heuristic', 'norvig']) # for dfs, norvig
     
     test()
     #solve_all(from_file("top95.txt"), "95sudoku", 0.1)
@@ -441,7 +445,7 @@ if __name__ == '__main__':
     #solve_all(from_file("10_5sudoku.txt"),"", None)
     #solve_all(from_file("test.txt"), "", None)
     values = solve(grid2)
-    print("number of conflicts left=\t", nb_conflicts(values))
+    print("number of conflicts left:\t", nb_conflicts(values))
     
 
 ## References used:
