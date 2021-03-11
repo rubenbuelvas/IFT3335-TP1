@@ -126,7 +126,7 @@ def display(values):
 
 def solve(grid):
     if args.method == "hc":
-        return hill_climbing(random_fill(grid_values(grid)), fixed_values(grid))
+        return hill_climbing(parse_grid(grid))
 
     elif args.method == "dfs":
         return search(parse_grid(grid))
@@ -194,54 +194,45 @@ units3x3 = unitlist[18:]
 #linepeers = dict((s, set(sum(lineunits[s], [])) - set([s]))
 #             for s in squares)"
 
-def hill_climbing(state, fixed_values):
+def hill_climbing(values):
+
+    state = random_fill(values) #current state
+    mutables = mutables_per_3x3(values) #positions where values are not fixed
     
     conflicts = nb_conflicts(state)
-    if conflicts == 0:
+    if conflicts == 0: #solved!
         return state
     
     improved = True
     while (improved):
-    #check if nb of conflicts can be improved
-    #if a swap can improve nb of conflicts, execute it
         improved = False 
         max_improvement = 0
-        #best_pair = (None, None)
         best_next_state = None
-        for unit in units3x3:
-            for i in range(8):
-                if not fixed_values[unit[i]]:
-                    s1 = unit[i]
-                    for s2 in unit[i+1:]:
-                        if not fixed_values[s2]:
-                            next_state = state.copy()
-                            #swap values of pair s1 s2
-                            next_state[s1], next_state[s2] = state[s2], state[s1]
-                            improvement = conflicts - nb_conflicts(next_state)
-                        
-                            if improvement > max_improvement:
-                                max_improvement = improvement
-                                best_next_state = next_state
+        
+        for unit in mutables:
+            #for each unit, evaluate improvement for all possible swaps
+            for i in len(unit-1):
+                s1 = unit[i]
+                for s2 in unit[i+1:]:
+                    next_state = state.copy()
+                    #swap values of pair (s1, s2)
+                    next_state[s1], next_state[s2] = state[s2], state[s1]
+                    improvement = conflicts - nb_conflicts(next_state)
+                    if improvement > max_improvement:
+                        max_improvement = improvement
+                        best_next_state = next_state
         if max_improvement:
             state = best_next_state
             conflicts -= max_improvement
             
             if conflicts != 0: # conflicts == 0 => sudoku is solved. otherwise keep improving
                 improved = True
-                    
-        #for unit in mutables:
-        #    for i in len(unit)-1:
-        #        improvement = 0
-        #        s1 = unit[i]
-        #        for s2 in unit[i:]:"
 
     #algorithm has ended when it can no longer improve score
     #print("remaining conflicts:\t", conflicts)
     return state
 
 
-#def improve(state, fixed_values, nb_conflicts):
-    
 
 #def nb_conflicts(line_values):
 #    """count nb of conflicts in a unit"""
@@ -363,8 +354,8 @@ def solve_all(grids, name='', showif=0.0):
         print("Solved %d of %d %s puzzles (avg %.2f secs (%d Hz), max %.2f secs)." % (
             sum(results), N, name, sum(times) / N, N / sum(times), max(times)))
         if args.method == "hc":
-            print("number of conflicts remaining after solve attempt with Hill-Climbing: 
-                   avg %.2f, min %i, max %i"%(
+            print("number of conflicts remaining after solve attempt with Hill-Climbing:"
+                  + " avg %.2f, min %i, max %i"%(
                        sum(conflicts)/N, min(conflicts), max(conflicts)))
 
 
@@ -402,9 +393,7 @@ if __name__ == '__main__':
                         help='choice of heuristics fonction')
     parser.add_argument('method',
                         choices=['dfs','hc'],
-                        help='available methods are:\n
-                        -Depth-first-search with a choice of heuristic function;\n 
-                        -Hill-climbing.')
+                        help='available methods are:\n-Depth-first-search with a choice of heuristic function; \n-Hill-climbing.')
     args = parser.parse_args()
     
     
