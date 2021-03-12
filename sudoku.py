@@ -207,7 +207,7 @@ def naked_pairs(values):
 ################ Hill Climbing ################
 linelist = unitlist[0:18]
 #lines = dict(zip(cols+rows, unitlist[0:18]))
-lines_cols = dict(zip(cols+rows, unitlist[0:18])) #all lines and columns
+cols_rows = dict(zip(cols+rows, unitlist[0:18])) #all row and column units
 #rows_dict = {(r, linelist[9:]) for r in rows}
 #cols_dict = {(c, linelist[0:9]) for c in cols}
 #lines = dict((s, [u for u in linelist if s in u])
@@ -292,8 +292,8 @@ def net_improvement_from_swap(values, s1, s2):
 
     improvement = 0
     for i in range(2):        #for rows, columns
-        if s1[i] != s2[i]:    #if the pair doesn't share lines or columns
-            l = [values[s] for s in lines_cols[s1[i]]] # line of s1
+        if s1[i] != s2[i]:    #if the pair doesn't share lines (rows or columns)
+            l = [values[s] for s in cols_rows[s1[i]]] # line of s1
 
             #if s2 was not in s1's line, then the swap will improve the state
             improvement += 1 if values[s2] not in l else -1
@@ -302,7 +302,7 @@ def net_improvement_from_swap(values, s1, s2):
             improvement += 1 if l.count(values[s1]) > 1 else -1
 
             #do the same for the line of s2
-            l = [values[s] for s in lines_cols[s2[i]]]
+            l = [values[s] for s in cols_rows[s2[i]]]
             improvement += 1 if values[s1] not in l else -1
             improvement += 1 if l.count(values[s2]) > 1 else -1
             # print(f"---- improvement={improvement}")  #DGTEMP
