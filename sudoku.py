@@ -448,7 +448,7 @@ if __name__ == '__main__':
     #args = parser.parse_args(['dfs', '--heuristic', 'norvig']) # for dfs, norvig
     
     test()
-    solve_all(from_file("top95.txt"), "95sudoku", 0.1)
+    # solve_all(from_file("top95.txt"), "95sudoku", 0.1)
     # solve_all(from_file("easy50.txt", '========'), "easy", None)
     #solve_all(from_file("easy50.txt", '========'), "easy", None)
     #solve_all(from_file("top95.txt"), "hard", None)
@@ -456,8 +456,8 @@ if __name__ == '__main__':
     #solve_all([random_puzzle() for _ in range(100)], "random", 100.0)
     #solve_all(from_file("10_5sudoku.txt"),"", None)
     #solve_all(from_file("test.txt"), "", None)
-    #values = solve(grid2)
-    #print("number of conflicts left:\t", nb_conflicts(values))
+    values = solve(grid2)
+    print("number of conflicts left:\t", nb_conflicts(values))
     
 
 ## References used:
