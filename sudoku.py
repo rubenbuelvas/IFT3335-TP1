@@ -145,8 +145,7 @@ def display(values):
 def solve(grid):
     if args.method == "hc":
         return hill_climbing(parse_grid(grid))
-
-
+    
     elif args.method == "dfs":
         return search(parse_grid(grid))
 
@@ -185,7 +184,6 @@ def random_square(values):
 def norvig(values):
     """Choose the unfilled square s with the fewest possibilities"""
     n,s = min((len(values[s]), s) for s in squares if len(values[s]) > 1)
-
     return s
 
 
@@ -198,8 +196,7 @@ def naked_pairs(values):
         #pick a square. if any of its peers has the same 2 digits, it's a naked pair
         s,d = two_digits.popitem()
         if any({k:v for k,v in two_digits.items() if v==d and k in peers[s]}) :
-            return s
-   
+            return s 
     return norvig(values)
 
 
@@ -254,12 +251,12 @@ def hill_climbing(values):
                                 a, b = s1, s2
 
         if max_improvement: #found improvement
-            print("\nswapping {}, {}".format(a,b))
+            print("\nswapping {}, {} for a max improvement of {}".format(a,b,max_improvement))
             conflicts -= max_improvement
             state[a], state[b] = state[b], state[a]
 
             display(state)
-            print(f"number of conflicts left:\t {nb_conflicts(state)}\t and max_improvement={max_improvement}") #DGNEW
+            print(f"number of conflicts left:\t {nb_conflicts(state)}") #DGNEW
             
             # if no conflicts => sudoku is solved. otherwise keep improving state
             if conflicts == 0:
@@ -270,6 +267,7 @@ def hill_climbing(values):
         
     #algorithm has ended when it can no longer improve score
     return state
+
 
 def net_improvement_from_swap(values, s1, s2):
     """DOCUMENTATION TO REVIEW (DGTEMP) ---------------------------------------------------------------------------------------------------
@@ -292,7 +290,7 @@ def net_improvement_from_swap(values, s1, s2):
 
     improvement = 0
     for i in range(2):        #for rows, columns
-        if s1[i] != s2[i]:    #if the pair doesn't share lines (rows or columns)
+        if s1[i] != s2[i]:    #if the pair doesn't share lines
             l = [values[s] for s in cols_rows[s1[i]]] # line of s1
 
             #if s2 was not in s1's line, then the swap will improve the state
@@ -305,8 +303,8 @@ def net_improvement_from_swap(values, s1, s2):
             l = [values[s] for s in cols_rows[s2[i]]]
             improvement += 1 if values[s1] not in l else -1
             improvement += 1 if l.count(values[s2]) > 1 else -1
-            # print(f"---- improvement={improvement}")  #DGTEMP
-    return improvement
+
+    return improvement//2
         
         
 #not used in hill-climbing except to compare values before and after running algorithm
@@ -450,7 +448,7 @@ if __name__ == '__main__':
     #args = parser.parse_args(['dfs', '--heuristic', 'norvig']) # for dfs, norvig
     
     test()
-    #solve_all(from_file("top95.txt"), "95sudoku", 0.1)
+    solve_all(from_file("top95.txt"), "95sudoku", 0.1)
     # solve_all(from_file("easy50.txt", '========'), "easy", None)
     #solve_all(from_file("easy50.txt", '========'), "easy", None)
     #solve_all(from_file("top95.txt"), "hard", None)
@@ -458,8 +456,8 @@ if __name__ == '__main__':
     #solve_all([random_puzzle() for _ in range(100)], "random", 100.0)
     #solve_all(from_file("10_5sudoku.txt"),"", None)
     #solve_all(from_file("test.txt"), "", None)
-    values = solve(grid2)
-    print("number of conflicts left:\t", nb_conflicts(values))
+    #values = solve(grid2)
+    #print("number of conflicts left:\t", nb_conflicts(values))
     
 
 ## References used:
