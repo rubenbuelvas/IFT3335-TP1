@@ -447,11 +447,11 @@ if __name__ == '__main__':
     values = solve(grid2, True) # Longer test
     print('--------------------  Test with one grid END  --------------------')
 
-    solve_all(from_file("MesSudokus/top95.txt      "),      "top95", 9.0)
-    solve_all(from_file("MesSudokus/easy50.txt"),     "easy50", None)
-    solve_all(from_file("MesSudokus/hardest.txt   "),    "hardest", None)
-    solve_all(from_file("MesSudokus/100sudoku.txt"),  "1000sudoku", None)
-    solve_all(from_file("MesSudokus/1000sudoku.txt"), "100sudoku", None)
+    solve_all(from_file("MesSudokus/top95.txt      "), "top95     ", 9.0)
+    solve_all(from_file("MesSudokus/easy50.txt     "), "easy50    ", None)
+    solve_all(from_file("MesSudokus/hardest.txt    "), "hardest   ", None)
+    solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
+    solve_all(from_file("MesSudokus/1000sudoku.txt "), "1000sudoku", None)
 
     #solve_all(from_file("top95.txt"), "hard", None)
     #solve_all(from_file("hardest.txt"), "hardest", None)
