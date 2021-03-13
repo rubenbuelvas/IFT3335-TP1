@@ -222,6 +222,8 @@ def hill_climbing(values):
     
     constraints = values               #initial parsed grid serves as constraints
     state = random_fill(values.copy()) #state initialization
+    #DGSCRAP The line below will work only with grid3
+    #state = {'A1': '4', 'A2': '1', 'A3': '5', 'A4': '2', 'A5': '7', 'A6': '3', 'A7': '6', 'A8': '9', 'A9': '8', 'B1': '7', 'B2': '9', 'B3': '8', 'B4': '1', 'B5': '5', 'B6': '6', 'B7': '2', 'B8': '3', 'B9': '4', 'C1': '3', 'C2': '2', 'C3': '6', 'C4': '8', 'C5': '4', 'C6': '9', 'C7': '5', 'C8': '1', 'C9': '7', 'D1': '2', 'D2': '3', 'D3': '7', 'D4': '4', 'D5': '6', 'D6': '8', 'D7': '9', 'D8': '5', 'D9': '1', 'E1': '8', 'E2': '4', 'E3': '9', 'E4': '5', 'E5': '3', 'E6': '1', 'E7': '7', 'E8': '2', 'E9': '6', 'F1': '5', 'F2': '6', 'F3': '1', 'F4': '7', 'F5': '9', 'F6': '2', 'F7': '8', 'F8': '4', 'F9': '3', 'G1': '3', 'G2': '8', 'G3': '2', 'G4': '3', 'G5': '1', 'G6': '5', 'G7': '4', 'G8': '7', 'G9': '9', 'H1': '9', 'H2': '7', 'H3': '5', 'H4': '9', 'H5': '2', 'H6': '4', 'H7': '3', 'H8': '8', 'H9': '5', 'I1': '6', 'I2': '1', 'I3': '4', 'I4': '6', 'I5': '8', 'I6': '7', 'I7': '1', 'I8': '6', 'I9': '2'} #DGSCRAP
     conflicts = nb_conflicts(state)    #nb of conflicts in current state
 
     print("***initial grid***")
@@ -256,7 +258,7 @@ def hill_climbing(values):
             state[a], state[b] = state[b], state[a]
 
             display(state)
-            print(f"number of conflicts left:\t {nb_conflicts(state)}") #DGNEW
+            print(f"number of conflicts left:\t {nb_conflicts(state)}")
             
             # if no conflicts => sudoku is solved. otherwise keep improving state
             if conflicts == 0:
@@ -270,41 +272,35 @@ def hill_climbing(values):
 
 
 def net_improvement_from_swap(values, s1, s2):
-    """DOCUMENTATION TO REVIEW (DGTEMP) ---------------------------------------------------------------------------------------------------
-    ORIGINAL APPROACH:
-     + 1 if s1 line already has a duplicate of this value, and -1 otherwise
-     + 1 if s1 column already has a duplicate of this value, and -1 otherwise
-     + 1 if s1 new line doesn't have this value, and -1 otherwise
-     + 1 if s1 new column doesn't have this value, and -1 otherwise
-     ... and same for s2
-    ... which gives a result between -8 and +8 for each possible swap, and we take the best improvement (highest value)
-    PROPOSED APPROACH:
-    + 0 if s1 leaves a line/column in which its number was and go to a line/column in which its number is
-    + 1 if s1 leaves a line/column in which its number was and go to a line/column in which its number isn't
-    - 1 if s1 leaves a line/column in which its number wasn't and go to a line/column in which its number is
-    + 0 if s1 leaves a line/column in which its number wasn't and go to a line/column in which its number isn't
-    Same for s2
-     ... and same for s2
-    ... which gives a result between -4 and +4 for each possible swap, and we take the best improvement (highest value)
-    """ #DGTEMP
+    """This fonction will return the difference in the number of conflicts between a grid (values) before a swap and after
+    Total improvements will vary from -4 to +4 and the highest number is the best:
+        + 1 if s1 leaves   a line/column in which the digit was already there (possibles improvements of 0, +1 and +2)
+        + 1 if s2 leaves   a line/column in which the digit was already there (possibles improvements of 0, +1 and +2)
+        - 1 if s1 lands in a line/column in which the digit was already there (possibles improvements of 0, -1 and -2)
+        - 1 if s2 lands in a line/column in which the digit was already there (possibles improvements of 0, -1 and -2)
+    """
 
+    toprint = False #DGSCRAP
     improvement = 0
     for i in range(2):        #for rows, columns
         if s1[i] != s2[i]:    #if the pair doesn't share lines
             l = [values[s] for s in cols_rows[s1[i]]] # line of s1
+            #if s2 was not in s1's col_rows, then the swap will improve the state
+            improvement += 0 if values[s2] not in l else -1 # arrival of s2: -1 if conflict and 0 otherwise
+            if toprint and s1 == 'G1' and s2 == 'I1': print(f"s1={s1} s2={s2} if s2 was not in s1's line improvement={improvement} and l={l}") #DGSCRAP
 
-            #if s2 was not in s1's line, then the swap will improve the state
-            improvement += 1 if values[s2] not in l else -1
+            #if s1 was a duplicate digit in its col_rows, the swap will improve the state
+            improvement += 1 if l.count(values[s1]) > 1 else 0 # departure of s1: +1 if decreases conflict and 0 otherwise
+            if toprint and s1 == 'G1' and s2 == 'I1': print(f"s1={s1} s2={s2} if s1 was dup in s1's line improvement={improvement} and l={l}") #DGSCRAP
 
-            #if s1 was a duplicate digit in its line, the swap will improve the state
-            improvement += 1 if l.count(values[s1]) > 1 else -1
-
-            #do the same for the line of s2
+            #do the same for the col_rows of s2
             l = [values[s] for s in cols_rows[s2[i]]]
-            improvement += 1 if values[s1] not in l else -1
-            improvement += 1 if l.count(values[s2]) > 1 else -1
+            improvement += 0 if values[s1] not in l else -1 # arrival of s1: -1 if conflict and 0 otherwise
+            if toprint and s1 == 'G1' and s2 == 'I1': print(f"s1={s1} s2={s2} if s1 was not in s2's line improvement={improvement} and l={l}") #DGSCRAP
+            improvement += 1 if l.count(values[s2]) > 1 else 0 # departure of s2: +1 if decreases conflict and 0 otherwise
+            if toprint and s1 == 'G1' and s2 == 'I1': print(f"s1={s1} s2={s2} if s2 was dup in s2's line improvement={improvement} and l={l}") #DGSCRAP
 
-    return improvement//2
+    return improvement
         
         
 #not used in hill-climbing except to compare values before and after running algorithm
@@ -427,6 +423,7 @@ def random_puzzle(N=17):
 
 grid1 = '003020600900305001001806400008102900700000008006708200002609500800203009005010300'
 grid2 = '4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......'
+grid3 = '4..27.6..798156234.2.84...7237468951849531726561792843.82.15479.7..243....4.87..2' #Easy grid to test
 hard1 = '.....6....59.....82....8....45........3........6..3.54...325..6..................'
 
 
@@ -457,8 +454,8 @@ if __name__ == '__main__':
     #solve_all(from_file("10_5sudoku.txt"),"", None)
     #solve_all(from_file("test.txt"), "", None)
     values = solve(grid2)
-    print("number of conflicts left:\t", nb_conflicts(values))
-    
+    #values = solve(grid3) #DGSCRAP
+    #print("number of conflicts left:\t", nb_conflicts(values)) #DGSCRAP
 
 ## References used:
 ## http://www.scanraid.com/BasicStrategies.htm
