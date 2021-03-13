@@ -142,9 +142,9 @@ def display(values):
 
 ################ Search ################
 
-def solve(grid):
+def solve(grid, printoutput=False):
     if args.method == "hc":
-        return hill_climbing(parse_grid(grid))
+        return hill_climbing(parse_grid(grid), printoutput)
     
     elif args.method == "dfs":
         return search(parse_grid(grid))
@@ -212,7 +212,7 @@ cols_rows = dict(zip(cols+rows, unitlist[0:18])) #all row and column units
 units3x3 = unitlist[18:] 
 
 
-def hill_climbing(values):
+def hill_climbing(values, printoutput=False):
     """Hill climbing algorithm. 
     The initial state has each square filled with one randomly chosen possible
     value such that each 3x3 unit has the complete set of digits. This may cause
@@ -224,9 +224,10 @@ def hill_climbing(values):
     state = random_fill(values.copy()) #state initialization
     conflicts = nb_conflicts(state)    #nb of conflicts in current state
 
-    print("***initial grid***")
-    display(state)
-    print("initial nb of conflicts", nb_conflicts(state))
+    if printoutput:
+        print("***initial grid***")
+        display(state)
+        print("initial nb of conflicts", nb_conflicts(state))
     
     if conflicts == 0:   #solved!
         return state
@@ -251,12 +252,13 @@ def hill_climbing(values):
                                 a, b = s1, s2
 
         if max_improvement: #found improvement
-            print("\nswapping {}, {} for a max improvement of {}".format(a,b,max_improvement))
+            if printoutput: print("\nswapping {}, {} for a max improvement of {}".format(a,b,max_improvement))
             conflicts -= max_improvement
             state[a], state[b] = state[b], state[a]
 
-            display(state)
-            print(f"number of conflicts left:\t {nb_conflicts(state)}")
+            if printoutput:
+                display(state)
+                print(f"number of conflicts left:\t {nb_conflicts(state)}")
             
             # if no conflicts => sudoku is solved. otherwise keep improving state
             if conflicts == 0:
@@ -438,18 +440,26 @@ if __name__ == '__main__':
     #args = parser.parse_args(['dfs', '--heuristic', 'norvig']) # for dfs, norvig
     
     test()
-    # solve_all(from_file("top95.txt"), "95sudoku", 0.1)
-    # solve_all(from_file("easy50.txt", '========'), "easy", None)
-    #solve_all(from_file("easy50.txt", '========'), "easy", None)
+
+    # Local test with display
+    print('-------------------- Test with one grid START --------------------')
+    # values = solve(grid3, True) # Quick test with grid almost complete
+    values = solve(grid2, True) # Longer test
+    print('--------------------  Test with one grid END  --------------------')
+
+    solve_all(from_file("MesSudokus/top95.txt      "),      "top95", 9.0)
+    solve_all(from_file("MesSudokus/easy50.txt"),     "easy50", None)
+    solve_all(from_file("MesSudokus/hardest.txt   "),    "hardest", None)
+    solve_all(from_file("MesSudokus/100sudoku.txt"),  "1000sudoku", None)
+    solve_all(from_file("MesSudokus/1000sudoku.txt"), "100sudoku", None)
+
     #solve_all(from_file("top95.txt"), "hard", None)
     #solve_all(from_file("hardest.txt"), "hardest", None)
     #solve_all([random_puzzle() for _ in range(100)], "random", 100.0)
     #solve_all(from_file("10_5sudoku.txt"),"", None)
     #solve_all(from_file("test.txt"), "", None)
 
-    # values = solve(grid3) # Quick test with grid almost complete
-    values = solve(grid2) # Longer test
-    print("FINAL number of conflicts left:\t", nb_conflicts(values))
+    #print("FINAL number of conflicts left:\t", nb_conflicts(values))
 
 ## References used:
 ## http://www.scanraid.com/BasicStrategies.htm
