@@ -143,9 +143,9 @@ def display(values):
 
 ################ Search ################
 
-def solve(grid):
+def solve(grid, printoutput=False):
     if args.method == "hc":
-        return hill_climbing(parse_grid(grid))
+        return hill_climbing(parse_grid(grid), printoutput)
     
     elif args.method == "dfs":
         return search(parse_grid(grid))
@@ -213,7 +213,7 @@ cols_rows = dict(zip(cols+rows, unitlist[0:18])) #all row and column units
 units3x3 = unitlist[18:] 
 
 
-def hill_climbing(values):
+def hill_climbing(values, printoutput=False):
     """Hill climbing algorithm. 
     The initial state has each square filled with one randomly chosen possible
     value such that each 3x3 unit has the complete set of digits. This may cause
@@ -224,10 +224,12 @@ def hill_climbing(values):
     constraints = values               #initial parsed grid serves as constraints
     state = random_fill(values.copy()) #state initialization
     conflicts = nb_conflicts(state)    #nb of conflicts in current state
-    #display(constraints)
-    #print("***initial grid***")
-    #display(state)
-    #print("initial nb of conflicts", nb_conflicts(state))
+
+    if printoutput:
+        print("***initial grid***")
+        display(state)
+        print("initial nb of conflicts", nb_conflicts(state))
+
     
     if conflicts == 0:   #solved!
         return state
@@ -252,13 +254,15 @@ def hill_climbing(values):
                                 a, b = s1, s2
 
         if max_improvement: #found improvement
-            #print("\nswapping {}, {} for a max improvement of {}".format(
-            #    a,b,max_improvement))
+            if printoutput:
+                print("\nswapping {}, {} for a max improvement of {}".format(
+                    a,b,max_improvement))
             conflicts -= max_improvement
             state[a], state[b] = state[b], state[a]
 
-            #display(state)
-            #print(f"number of conflicts left:\t {nb_conflicts(state)}") #DGNEW
+            if printoutput:
+                display(state)
+                print(f"number of conflicts left:\t {nb_conflicts(state)}")
             
             # if no conflicts => sudoku is solved. otherwise keep improving state
             if conflicts == 0:
@@ -272,41 +276,32 @@ def hill_climbing(values):
 
 
 def net_improvement_from_swap(values, s1, s2):
-    """DOCUMENTATION TO REVIEW (DGTEMP) ---------------------------------------------------------------------------------------------------
-    ORIGINAL APPROACH:
-     + 1 if s1 line already has a duplicate of this value, and -1 otherwise
-     + 1 if s1 column already has a duplicate of this value, and -1 otherwise
-     + 1 if s1 new line doesn't have this value, and -1 otherwise
-     + 1 if s1 new column doesn't have this value, and -1 otherwise
-     ... and same for s2
-    ... which gives a result between -8 and +8 for each possible swap, and we take the best improvement (highest value)
-    PROPOSED APPROACH:
-    + 0 if s1 leaves a line/column in which its number was and go to a line/column in which its number is
-    + 1 if s1 leaves a line/column in which its number was and go to a line/column in which its number isn't
-    - 1 if s1 leaves a line/column in which its number wasn't and go to a line/column in which its number is
-    + 0 if s1 leaves a line/column in which its number wasn't and go to a line/column in which its number isn't
-    Same for s2
-     ... and same for s2
-    ... which gives a result between -4 and +4 for each possible swap, and we take the best improvement (highest value)
-    """ #DGTEMP
+    """This fonction will return the difference in the number of conflicts 
+    in a grid (values) before and after swapping the values in s1, s2
+    Total improvements will vary from -4 to +4 and the highest number is the best:
+        + 1 if s1 leaves   a row/column in which the digit already was (possible improvements of 0, +1 and +2)
+        + 1 if s2 leaves   a row/column in which the digit already was (possible improvements of 0, +1 and +2)
+        - 1 if s1 lands in a row/column in which the digit already was (possible improvements of 0, -1 and -2)
+        - 1 if s2 lands in a row/column in which the digit already was (possible improvements of 0, -1 and -2)
+    """
 
     improvement = 0
-    for i in range(2):        #for rows, columns
+    for i in range(2):        #for row, column lines
         if s1[i] != s2[i]:    #if the pair doesn't share lines
-            l = [values[s] for s in cols_rows[s1[i]]] # line of s1
-
-            #if s2 was not in s1's line, then the swap will improve the state
-            improvement += 1 if values[s2] not in l else -1
+            # line of s1
+            l = [values[s] for s in cols_rows[s1[i]]]   
+            # 1) if digit from s2 was already in s1's line, the swap will worsen the state
+            improvement += -1 if values[s2] in l else 0 
 
             #if s1 was a duplicate digit in its line, the swap will improve the state
-            improvement += 1 if l.count(values[s1]) > 1 else -1
+            improvement += 1 if l.count(values[s1]) > 1 else 0 
 
             #do the same for the line of s2
             l = [values[s] for s in cols_rows[s2[i]]]
-            improvement += 1 if values[s1] not in l else -1
-            improvement += 1 if l.count(values[s2]) > 1 else -1
+            improvement += 0 if values[s1] not in l else -1 # arrival of s1: -1 if conflict and 0 otherwise
+            improvement += 1 if l.count(values[s2]) > 1 else 0 # departure of s2: +1 if decreases conflict and 0 otherwise
 
-    return improvement//2
+    return improvement
         
         
 #not used in hill-climbing except to compare values before and after running algorithm
@@ -433,6 +428,7 @@ def random_puzzle(N=17):
 
 grid1 = '003020600900305001001806400008102900700000008006708200002609500800203009005010300'
 grid2 = '4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......'
+grid3 = '4..27.6..798156234.2.84...7237468951849531726561792843.82.15479.7..243....4.87..2' #Easy grid to test
 hard1 = '.....6....59.....82....8....45........3........6..3.54...325..6..................'
 
 
@@ -456,17 +452,26 @@ if __name__ == '__main__':
     #args = parser.parse_args(['dfs', '--heuristic', 'norvig']) # for dfs, norvig
     
     test()
-    solve_all(from_file("top95.txt"), "95sudoku", 0.1)
-    # solve_all(from_file("easy50.txt", '========'), "easy", None)
-    #solve_all(from_file("easy50.txt", '========'), "easy", None)
+
+    # Local test with display
+    print('-------------------- Test with one grid START --------------------')
+    # values = solve(grid3, True) # Quick test with grid almost complete
+    values = solve(grid2, True) # Longer test
+    print('--------------------  Test with one grid END  --------------------')
+
+    solve_all(from_file("MesSudokus/top95.txt      "), "top95     ", 9.0)
+    solve_all(from_file("MesSudokus/easy50.txt     "), "easy50    ", None)
+    solve_all(from_file("MesSudokus/hardest.txt    "), "hardest   ", None)
+    solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
+    solve_all(from_file("MesSudokus/1000sudoku.txt "), "1000sudoku", None)
+
     #solve_all(from_file("top95.txt"), "hard", None)
     #solve_all(from_file("hardest.txt"), "hardest", None)
     #solve_all([random_puzzle() for _ in range(100)], "random", 100.0)
     #solve_all(from_file("10_5sudoku.txt"),"", None)
     #solve_all(from_file("test.txt"), "", None)
-    #values = solve(grid2)
-    #print("number of conflicts left:\t", nb_conflicts(values))
-    
+
+    #print("FINAL number of conflicts left:\t", nb_conflicts(values))
 
 ## References used:
 ## http://www.scanraid.com/BasicStrategies.htm
