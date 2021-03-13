@@ -276,13 +276,11 @@ def hill_climbing(values, printoutput=False):
 
 
 def net_improvement_from_swap(values, s1, s2):
-    """This fonction will return the difference in the number of conflicts 
-    in a grid (values) before and after swapping the values in s1, s2
-    Total improvements will vary from -4 to +4 and the highest number is the best:
-        + 1 if s1 leaves   a row/column in which the digit already was (possible improvements of 0, +1 and +2)
-        + 1 if s2 leaves   a row/column in which the digit already was (possible improvements of 0, +1 and +2)
-        - 1 if s1 lands in a row/column in which the digit already was (possible improvements of 0, -1 and -2)
-        - 1 if s2 lands in a row/column in which the digit already was (possible improvements of 0, -1 and -2)
+    """return the difference in the number of conflicts in a grid (values) from
+    before and after swapping the values in s1, s2
+    Total improvements vary from -4 to +4 and the higher the number the better:
+        + 1 if a digit leaves   a row/column in which its duplicate exist 
+        - 1 if a digit lands in a row/column that already has a copy of it
     """
 
     improvement = 0
@@ -291,15 +289,15 @@ def net_improvement_from_swap(values, s1, s2):
             # line of s1
             l = [values[s] for s in cols_rows[s1[i]]]   
             # 1) if digit from s2 was already in s1's line, the swap will worsen the state
-            improvement += -1 if values[s2] in l else 0 
+            improvement -= 1 if values[s2] in l else 0 
 
-            #if s1 was a duplicate digit in its line, the swap will improve the state
+            # 2) if s1 was a duplicate digit in its line, the swap will improve the state
             improvement += 1 if l.count(values[s1]) > 1 else 0 
 
             #do the same for the line of s2
             l = [values[s] for s in cols_rows[s2[i]]]
-            improvement += 0 if values[s1] not in l else -1 # arrival of s1: -1 if conflict and 0 otherwise
-            improvement += 1 if l.count(values[s2]) > 1 else 0 # departure of s2: +1 if decreases conflict and 0 otherwise
+            improvement -= 1 if values[s1] in l else 0 
+            improvement += 1 if l.count(values[s2]) > 1 else 0
 
     return improvement
         
@@ -459,11 +457,11 @@ if __name__ == '__main__':
     values = solve(grid2, True) # Longer test
     print('--------------------  Test with one grid END  --------------------')
 
-    solve_all(from_file("MesSudokus/top95.txt      "), "top95     ", 9.0)
-    solve_all(from_file("MesSudokus/easy50.txt     "), "easy50    ", None)
-    solve_all(from_file("MesSudokus/hardest.txt    "), "hardest   ", None)
-    solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
-    solve_all(from_file("MesSudokus/1000sudoku.txt "), "1000sudoku", None)
+    #solve_all(from_file("MesSudokus/top95.txt      "), "top95     ", 9.0)
+    #solve_all(from_file("MesSudokus/easy50.txt     "), "easy50    ", None)
+    #solve_all(from_file("MesSudokus/hardest.txt    "), "hardest   ", None)
+    #solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
+    #solve_all(from_file("MesSudokus/1000sudoku.txt "), "1000sudoku", None)
 
     #solve_all(from_file("top95.txt"), "hard", None)
     #solve_all(from_file("hardest.txt"), "hardest", None)
