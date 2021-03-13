@@ -41,7 +41,8 @@ cols     = digits
 squares  = cross(rows, cols)
 unitlist = ([cross(rows, c) for c in cols] +
             [cross(r, cols) for r in rows] +
-            [cross(rs, cs) for rs in ('ABC', 'DEF', 'GHI') for cs in ('123', '456', '789')])
+            [cross(rs, cs) for rs in ('ABC', 'DEF', 'GHI')
+                           for cs in ('123', '456', '789')])
 units = dict((s, [u for u in unitlist if s in u])
              for s in squares)
 peers = dict((s, set(sum(units[s], [])) - set([s]))
@@ -60,9 +61,9 @@ def test():
     assert units['C2'] == [['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2', 'I2'],
                            ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'],
                            ['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3']]
-    assert peers['C2'] == {'A2', 'B2', 'D2', 'E2', 'F2', 'G2', 'H2', 'I2',
-                           'C1', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 
-                           'A1', 'A3', 'B1', 'B3'}
+    assert peers['C2'] ==  {'A2', 'B2', 'D2', 'E2', 'F2', 'G2', 'H2', 'I2',
+                            'C1', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 
+                            'A1', 'A3', 'B1', 'B3'}
     print('All tests pass.')
 
 ################ Parse a Grid ################
@@ -223,10 +224,10 @@ def hill_climbing(values):
     constraints = values               #initial parsed grid serves as constraints
     state = random_fill(values.copy()) #state initialization
     conflicts = nb_conflicts(state)    #nb of conflicts in current state
-
-    print("***initial grid***")
-    display(state)
-    print("initial nb of conflicts", nb_conflicts(state))
+    #display(constraints)
+    #print("***initial grid***")
+    #display(state)
+    #print("initial nb of conflicts", nb_conflicts(state))
     
     if conflicts == 0:   #solved!
         return state
@@ -251,12 +252,13 @@ def hill_climbing(values):
                                 a, b = s1, s2
 
         if max_improvement: #found improvement
-            print("\nswapping {}, {} for a max improvement of {}".format(a,b,max_improvement))
+            #print("\nswapping {}, {} for a max improvement of {}".format(
+            #    a,b,max_improvement))
             conflicts -= max_improvement
             state[a], state[b] = state[b], state[a]
 
-            display(state)
-            print(f"number of conflicts left:\t {nb_conflicts(state)}") #DGNEW
+            #display(state)
+            #print(f"number of conflicts left:\t {nb_conflicts(state)}") #DGNEW
             
             # if no conflicts => sudoku is solved. otherwise keep improving state
             if conflicts == 0:
@@ -324,7 +326,7 @@ def random_fill(values):
     """fill each 3x3 unit randomly in such a way that there are no conflict 
     within each unit"""
     for unit in units3x3:
-        values = random_fill_unit(values,unit)
+        values = random_fill_unit(values, unit)
     return values
 
 
@@ -332,11 +334,14 @@ def random_fill_unit(values, unit):
     """fill a unit with random numbers, without conflict within that unit"""
     if values is False:
         return False
+
+    #display(values)
+    #print("\n")
     
     if all(len(values[s]) == 1 for s in unit):
         return values #unit is filled
-    
     s = random.choice([s for s in unit if len(values[s]) > 1])
+    #n,s = min([(len(values[s]), s) for s in unit if len(values[s]) > 1])
         
     return some(random_fill_unit(assign(values.copy(), s, d, unit),unit)
                                  for d in shuffled(values[s]))
@@ -398,7 +403,8 @@ def solve_all(grids, name='', showif=0.0):
         print("Solved %d of %d %s puzzles (avg %.2f secs (%d Hz), max %.2f secs)." % (
             sum(results), N, name, sum(times) / N, N / sum(times), max(times)))
         if args.method == "hc":
-            print("number of conflicts remaining after solve attempt with Hill-Climbing: avg %.2f, min %i, max %i"%(
+            print("number of conflicts remaining after solve attempt with Hill-Climbing: \
+                   avg %.2f, min %i, max %i"%(
                        sum(conflicts)/N, min(conflicts), max(conflicts)))
 
 
@@ -439,7 +445,9 @@ if __name__ == '__main__':
     parser.add_argument('method',
                         choices=['dfs','hc'],
                         default = 'dfs',
-                        help='available methods are:\n-Depth-first-search with a choice of heuristic function;\n-Hill-climbing.')
+                        help='available methods are:\n\
+                        -Depth-first-search with a choice of heuristic function;\n\
+                        -Hill-climbing.')
     
     #args = parser.parse_args()
 
