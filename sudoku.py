@@ -275,28 +275,25 @@ def hill_climbing(values, printoutput=False):
 
 
 def simulated_annealing(values, printoutput=False, a=0.99, t=3.0):
-
-    constraints = values   #initial parsed grid serves as constraints
-    solution = random_fill(values.copy()) #state initialization
+    all_pairs = get_all_pairs(values)
+    solution = random_fill(values) #state initialization
     conflicts = nb_conflicts(solution)    #nb of conflicts in current state
 
-    all_pairs = get_all_pairs(constraints)
-    #print(all_pairs)
+    if printoutput: print(all_pairs)
 
     for _ in range(20000):
         # if no conflicts => sudoku is solved. otherwise keep changing state
         if conflicts == 0:
             break
-
+    
         #pick a pair to swap
         s1, s2 = random.choice(all_pairs)
 
         #calculate potential improvement 
         improvement = net_improvement_from_swap(solution, s1, s2)
 
-        swap = False
         # a swap is due:
-        # 1) if it improves the solution
+        # 1) if it improves the solution or;
         # 2) with a certain probability depending on temperature and improvement
         #    suggested by the pair.
         # improvement == 0 will always lead to a swap
