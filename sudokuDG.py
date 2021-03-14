@@ -214,6 +214,23 @@ cols_rows = dict(zip(cols+rows, unitlist[0:18])) #all row and column units
              #for s in squares)
 units3x3 = unitlist[18:]
 
+# def swappable_pairs(state, constraints, unit): #DGNOTWORKING
+#     """Receives a unit and the constraint values and returns a list of pairs that can be swapped.
+#     For example, will receive ['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3'] and
+#     return [('A1', 'A2'), ('A1', 'B2'), ('B2', 'C2')]
+#     """
+#     list_of_swappable_pairs = []
+#     listofswappablesquares = [s for s in unit if len(constraints[s]) > 1]  # excludes the initial values
+#     for i in range(0, len(listofswappablesquares) - 1): # Loop trough all swappablesquares except the last one
+#         for j in range(i+1, len(listofswappablesquares)): # Loop trough all swappablesquares after i
+#             s1, s2 = listofswappablesquares[i], listofswappablesquares[j]
+#             if (state[s1] in constraints[s2]) and (state[s1] in constraints[s2]):
+#                 list_of_swappable_pairs.append((s1, s2))
+#
+#     #print(f"list_of_swappable_pairs for listofswappablesquares is : {list_of_swappable_pairs}")  # DGTEMP
+#
+#     return(list_of_swappable_pairs)
+
 
 def simulated_annealing(values, printoutput=False):
     """Simulated annealing algorithm.
@@ -224,7 +241,7 @@ def simulated_annealing(values, printoutput=False):
 
     ########STEP 1: INITIALIZE VARIABLES (schedule could be passed as parameters)
     initial_temperature = 3 #DG TO REVIEW. I can change this number to 100,000 or 0.1 and I get the same results
-    max_iterations = 30000 #DG TO REVIEW. I asked a question about this. I
+    max_iterations = 30000 #DG TO REVIEW. I asked a question about this. A number between 10,000 and 30,000 seems perfect here
     schedule = [initial_temperature] # Temperature schedule with t[i+1] = t[i] * a. For example, if T=3 and a=0.99: so T0 = 3, T1 = 3 * 0.99, T2 = 3 * 0.99 * 0.99, ...
     a = 0.99  # strategy to decrease temperature
     for t in range(1,max_iterations): #Initializes the temperature schedule  #DGTEMP: UNSURE WHEN TO STOP THE TEMPERATURE DECREASE SINCE schedule[1000]= 0.000129514
@@ -232,6 +249,7 @@ def simulated_annealing(values, printoutput=False):
 
     # Initialize current_state by populating all digits, creating conflicts in rows and columns
     constraints = values  # initial parsed grid serves as constraints
+
     current_state = random_fill(values.copy())  # state initialization
     conflicts = nb_conflicts(current_state)  # nb of conflicts in current state
 
@@ -249,13 +267,22 @@ def simulated_annealing(values, printoutput=False):
         T = schedule[t]
         if debug: print(f"----- LOOP # {t} of {len(schedule)} with T={T} -------------------------------------------------------------------------------------")  # DGTEMP
 
-        if T == 0: return current_state # DGTEMP: Hugo Larochelle's algorithm doesn't stop if T is ZÉRO. It simply goes through all steps of the schedule
+        if T == 0: return current_state # DGTEMP: Hugo Larochelle's algorithm doesn't stop if T is ZERO. It simply goes through all steps of the schedule
 
         ########STEP 3: SELECT RANDOMLY ANOTHER STATE (BETTER OR NOT)
         # Select 2 squares randomly within a 3x3unit
         s1, s2 = None, None
-        fsou = shuffled(firstsquaresofunit3x3) # Select the 3x3unit randomly using only the first square, and create a list in case first unit cannot have a swap
+        fsou = shuffled(firstsquaresofunit3x3) # Finds a 3x3unit randomly and ensures it can have a swap
         for fs in fsou: #Will loop through all 3x3units until if finds one with at least 2 swappable squares
+
+            #DGNOTWORKING
+            # list_of_swappable_pairs = swappable_pairs(current_state, constraints, units[fs][2]) # Within 3x3 unit
+            # if len(list_of_swappable_pairs) > 0: #found a swappable pair within constraints
+            #     current_pair = shuffled(list_of_swappable_pairs.pop())
+            #     s1, s2 = current_pair[0], current_pair[1]
+            #     break
+            # DGNOTWORKING
+
             listofswappablesquares = [s for s in units[fs][2] if len(values[s]) > 1] # will look through each squares within unit and add it if swappable
             if debug: print(f"DGTEMP: Looks if swappable squares in unit containing {fs}. Swappable squares are: {listofswappablesquares}") #DGTEMP
             if len(listofswappablesquares) >= 2: # Will swap 2 randomly selected squares
@@ -267,6 +294,9 @@ def simulated_annealing(values, printoutput=False):
 
         ########STEP 4: EVALUATE IMPROVEMENT AND DETERMINE IF CURRENT STATE BECOMES NEXT STATE
         improvement = net_improvement_from_swap(current_state, s1, s2)
+        # if not (current_state[s1] in constraints[s2]) or not (current_state[s2] in constraints[s1]): #DGSCRAP
+        #     improvement = -999999 #Invalid swap #DGSCRAP
+        #     print(f"invalid swap at iteration {t}: current_state[s1]={current_state[s1]} and constraints[s2]={constraints[s2]} + current_state[s2]={current_state[s2]} and constraints[s1]={constraints[s1]}") #DGSCRAP
 
         if improvement > 0: # current state will become next state, so we do the swap
             if printoutput: print(f"Swapping {s1} and {s2} because improvement of {improvement}")
