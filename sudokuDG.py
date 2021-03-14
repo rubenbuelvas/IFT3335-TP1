@@ -47,7 +47,7 @@ units = dict((s, [u for u in unitlist if s in u])
 peers = dict((s, set(sum(units[s], [])) - set([s]))
              for s in squares)
 
-firstsquaresofunit3x3 = cross('ADG','147')  # list containing 9 squares: first per unit: ['A1', 'A4', 'A7', 'D1', ... #DGTEMP Any better way to to this?
+firstsquaresofunit3x3 = cross('ADG','147')  # list containing 9 squares: first per unit: ['A1', 'A4', 'A7', 'D1', ... ]
 args = None #to be initialized with some values
 
 ################ Unit Tests ################
@@ -222,15 +222,12 @@ def simulated_annealing(values, printoutput=False):
 
     debug = False #DGTEMP
 
-    # if debug:
-    #     for scrap in range(100):
-    #         r = random.uniform(0, 1)
-    #         print(f"T={3} and i={-scrap} exp(-1/T) = {exp(-scrap / 3)}. r={r} so ISSMALLER={r <= exp(-scrap / 3)}")  # DGTEMP
-
     ########STEP 1: INITIALIZE VARIABLES (schedule could be passed as parameters)
-    schedule = [3] # Temperature schedule starts with 3 and decreases with t[i+1] = t[i] * a
+    initial_temperature = 3 #DG TO REVIEW. I can change this number to 100,000 or 0.1 and I get the same results
+    max_iterations = 30000 #DG TO REVIEW. I asked a question about this. I
+    schedule = [initial_temperature] # Temperature schedule with t[i+1] = t[i] * a. For example, if T=3 and a=0.99: so T0 = 3, T1 = 3 * 0.99, T2 = 3 * 0.99 * 0.99, ...
     a = 0.99  # strategy to decrease temperature
-    for t in range(1,1000): #Initializes the temperature schedule  #DGTEMP: UNSURE WHEN TO STOP THE TEMPERATURE DECREASE SINCE schedule[1000]= 0.000129514
+    for t in range(1,max_iterations): #Initializes the temperature schedule  #DGTEMP: UNSURE WHEN TO STOP THE TEMPERATURE DECREASE SINCE schedule[1000]= 0.000129514
         schedule.append(schedule[t-1] * a)
 
     # Initialize current_state by populating all digits, creating conflicts in rows and columns
@@ -270,23 +267,25 @@ def simulated_annealing(values, printoutput=False):
 
         ########STEP 4: EVALUATE IMPROVEMENT AND DETERMINE IF CURRENT STATE BECOMES NEXT STATE
         improvement = net_improvement_from_swap(current_state, s1, s2)
+
         if improvement > 0: # current state will become next state, so we do the swap
-            if printoutput: print(f"Swapping {s1} and {s2} because improvement of {improvement}")  # DGTEMP
+            if printoutput: print(f"Swapping {s1} and {s2} because improvement of {improvement}")
             to_swap = True
         else:
             # Will change only within probability based on the temperature
             r = random.uniform(0, 1)
             to_swap = r <= exp(improvement/T)
-            if printoutput and to_swap: print(f"Swapping {s1} and {s2} because temperature allows it. Improvement={improvement}, T={T}, math.exp(improvement/T) = {exp(improvement/T)} and r={r}")  # DGTEMP
+            if printoutput and to_swap: print(f"Swapping {s1} and {s2} because temperature allows it. Improvement={improvement}, T={T}, math.exp(improvement/T) = {exp(improvement/T)} and r={r}")
             #if printoutput and not to_swap: print(f"No swap because temperature doesn't allow it. Improvement={improvement}, T={T}, math.exp(improvement/T) = {exp(improvement / T)} and r={r}")  # DGTEMP
 
         if to_swap: # current state = next state
             current_state[s1], current_state[s2] = current_state[s2], current_state[s1]
+
             if printoutput:
                 display(current_state)
-                print(f"number of conflicts left:\t {nb_conflicts(current_state)}")
+                print(f"number of conflicts left:\t {nb_conflicts(current_state)} after iteration {t}")
             # if no conflicts => sudoku is solved. otherwise keep improving state
-            if conflicts == 0:
+            if nb_conflicts(current_state) == 0:
                 return current_state
 
     return current_state
@@ -387,7 +386,6 @@ def nb_conflicts(values):
         values_in_unit = [values[s] for s in unit]
         conflicts += len([d for d in digits if d not in values_in_unit])
     return conflicts
-
 
 
 def random_fill(values):
@@ -524,8 +522,8 @@ if __name__ == '__main__':
 
     print('-------------------- Test with one grid START - SIMULATED ANNEALING --------------------')
     args = parser.parse_args(['sa']) #for simulated annealing
-    values = solve(grid2, True) # Longer test
-    # values = solve(grid3, True) # Quick test with grid almost complete
+    #values = solve(grid2, True) # Longer test
+    values = solve(grid3, True) # Quick test with grid almost complete
     print('--------------------  Test with one grid END  - SIMULATED ANNEALING --------------------')
 
     # print('-------------------- Test with one grid START - HILL CLIMBING --------------------')
@@ -534,23 +532,22 @@ if __name__ == '__main__':
     # values = solve(grid2, True) # Longer test
     # print('--------------------  Test with one grid END  - HILL CLIMBING --------------------')
 
-    args = parser.parse_args(['sa']) #for simulated annealing
-    #args = parser.parse_args(['hc']) #for simulated annealing
-
-    solve_all(from_file("MesSudokus/top95.txt      "), "top95     ", 9.0)
-    solve_all(from_file("MesSudokus/easy50.txt     "), "easy50    ", None)
-    solve_all(from_file("MesSudokus/hardest.txt    "), "hardest   ", None)
-    solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
-    solve_all(from_file("MesSudokus/1000sudoku.txt "), "1000sudoku", None)
-
     print('--------------------  COMPARE THE 3 ALGORITHMS --------------------')
+    args = parser.parse_args(['dfs']) #for simulated annealing
+    solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
     args = parser.parse_args(['hc']) #for simulated annealing
     solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
     args = parser.parse_args(['sa']) #for simulated annealing
     solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
-    args = parser.parse_args(['dfs']) #for simulated annealing
-    solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
 
+    #args = parser.parse_args(['hc']) #for simulated annealing
+    args = parser.parse_args(['sa']) #for simulated annealing
+
+    # solve_all(from_file("MesSudokus/top95.txt      "), "top95     ", 9.0)
+    # solve_all(from_file("MesSudokus/easy50.txt     "), "easy50    ", None)
+    # solve_all(from_file("MesSudokus/hardest.txt    "), "hardest   ", None)
+    # solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
+    solve_all(from_file("MesSudokus/1000sudoku.txt "), "1000sudoku", None)
 
 ## References used:
 ## http://www.scanraid.com/BasicStrategies.htm
