@@ -150,7 +150,7 @@ def solve(grid, printoutput=False):
         return hill_climbing(parse_grid(grid), printoutput)
     
     if args.method == "sa":
-        return simulated_annealing(parse_grid(grid), printoutput)
+        return simulated_annealing(parse_grid(grid), printoutput=printoutput)
     
     elif args.method == "dfs":
         return search(parse_grid(grid))
@@ -208,14 +208,10 @@ def naked_pairs(values):
 
 
 ################ Hill Climbing ################
-linelist = unitlist[0:18]
-#lines = dict(zip(cols+rows, unitlist[0:18]))
-cols_rows = dict(zip(cols+rows, unitlist[0:18])) #all row and column units
-#rows_dict = {(r, linelist[9:]) for r in rows}
-#cols_dict = {(c, linelist[0:9]) for c in cols}
-#lines = dict((s, [u for u in linelist if s in u])
-             #for s in squares)
 units3x3 = unitlist[18:] 
+linelist = unitlist[0:18]
+cols_rows = dict(zip(cols+rows, unitlist[0:18])) #all row and column units
+
 
 
 def hill_climbing(values, printoutput=False):
@@ -274,7 +270,7 @@ def hill_climbing(values, printoutput=False):
 
 
 
-def simulated_annealing(values, printoutput=False, a=0.99, t=3.0):
+def simulated_annealing(values, a=0.99, t=3.0, printoutput=False):
     all_pairs = get_all_pairs(values)
     solution = random_fill(values) #state initialization
     conflicts = nb_conflicts(solution)    #nb of conflicts in current state
