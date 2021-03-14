@@ -279,8 +279,7 @@ def simulated_annealing(values, printoutput=False, a=0.99, t=3.0):
     constraints = values   #initial parsed grid serves as constraints
     solution = random_fill(values.copy()) #state initialization
     conflicts = nb_conflicts(solution)    #nb of conflicts in current state
-    min_conflicts = conflicts
-    best_solution = solution.copy()
+
     all_pairs = get_all_pairs(constraints)
     #print(all_pairs)
 
@@ -304,20 +303,25 @@ def simulated_annealing(values, printoutput=False, a=0.99, t=3.0):
         if improvement >= 0 or random.uniform(0, 1) <= math.exp(improvement/t):
             solution[s1], solution[s2] = solution[s2], solution[s1]
             conflicts -= improvement
-            if conflicts < min_conflicts:
-                min_conflicts = conflicts
-                best_solution = solution.copy()
-            #print(conflicts)
+            
+            if printoutput:
+                cause = "improvement" if improvement > 0 else "temperature"
+                print(f"Swapping {s1} and {s2} because {cause} allows."
+                      + f" Improvement = {improvement}")
+                display(solution)
+                print(f"number of conflicts left:\t {nb_conflicts(solution)}")
+
         #decrease temperature at each iteration
         t *= a
         #print("t={}", t)
                       
-    return best_solution
+    return solution
 
 
 
 def get_all_pairs(constraints):
-    """return list of all pairs of squares in each 3x3 unit whose values are not fixed.
+    """return list of all pairs of squares in each 3x3 unit whose values are 
+    not fixed.
     The pairs are not necessarily 'swappable'. Their present-state values must be 
     evaluated before each swap to ensure it respects the constraints"""
     pairs = []
@@ -447,12 +451,17 @@ def solve_all(grids, name='', showif=0.0):
     
     N = len(grids)
     if N > 1:
-        print("Solved %d of %d %s puzzles (avg %.2f secs (%d Hz), max %.2f secs)." % (
-            sum(results), N, name, sum(times) / N, N / sum(times), max(times)))
-        if args.method == "hc" or args.method == 'sa':
-            print("Number of conflicts remaining after solve attempt: "
-                  + "avg %.2f, min %i, max %i."%(
-                  sum(conflicts)/N, min(conflicts), max(conflicts)))
+        print("Solved %d of %d %s puzzles within %.2f secs (avg %.2f secs (%d Hz), max %.2f secs). Method=%s" % (
+            sum(results), N, name, sum(times), sum(times) / N, N / sum(times),
+                  max(times), args.method))
+        if args.method == "hc":
+            print("Number of conflicts remaining after solve attempt with"
+                  + " Hill-Climbing: avg %.2f, min %i, max %i"%(
+                       sum(conflicts)/N, min(conflicts), max(conflicts)))
+        if args.method == "sa":
+            print("Number of conflicts remaining after solve attempt with"
+                  + " Simulated Annealing: avg %.2f, min %i, max %i"%(
+                       sum(conflicts)/N, min(conflicts), max(conflicts)))
 
 
 def solved(values):
@@ -520,10 +529,10 @@ if __name__ == '__main__':
     #solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
     #solve_all(from_file("MesSudokus/1000sudoku.txt "), "1000sudoku", None)
 
-    solve_all(from_file("top95.txt"), "top95", None)
+    #solve_all(from_file("top95.txt"), "top95", None)
     #solve_all(from_file("hardest.txt"), "hardest", None)
     #solve_all([random_puzzle() for _ in range(100)], "random", 100.0)
-    #solve_all(from_file("1000sudoku2.txt"),"", None)
+    solve_all(from_file("1000sudoku2.txt"),"", None)
     #solve_all(from_file("test.txt"), "", None)
     
     #print("FINAL number of conflicts left:\t", nb_conflicts(values))
