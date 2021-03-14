@@ -310,8 +310,7 @@ def simulated_annealing(values, printoutput=False, a=0.99, t=3.0):
 
         #decrease temperature at each iteration
         t *= a
-        #print("t={}", t)
-                      
+       
     return solution
 
 
@@ -320,7 +319,7 @@ def get_all_pairs(constraints):
     """return list of all pairs of squares in each 3x3 unit whose values are 
     not fixed.
     The pairs are not necessarily 'swappable'. Their present-state values must be 
-    evaluated before each swap to ensure it respects the constraints"""
+    evaluated before each swap if constraints must be met"""
     pairs = []
     for unit in units3x3:
         mutables = [s for s in unit if len(constraints[s]) > 1]
