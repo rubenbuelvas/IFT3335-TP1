@@ -208,9 +208,10 @@ def naked_pairs(values):
 
 
 ################ Hill Climbing ################
-units3x3 = unitlist[18:] 
+blocklist = unitlist[18:] # list of blocks (3x3 units)
+blocks = dict((s,u) for u in blocklist for s in squares if s in u)
 linelist = unitlist[0:18]
-cols_rows = dict(zip(cols+rows, unitlist[0:18])) #all row and column units
+cols_rows = dict(zip(cols+rows, linelist)) #all row and column units
 
 
 
@@ -251,13 +252,13 @@ def hill_climbing(values, printoutput=False):
                     a, b = s1, s2
                    
         if max_improvement: #found improvement
-            if printoutput:
-                print("\nswapping {}, {} for a max improvement of {}".format(
-                    a,b,max_improvement))
+           
             conflicts -= max_improvement
             state[a], state[b] = state[b], state[a]
 
             if printoutput:
+                print("\nswapping {}, {} for a max improvement of {}".format(
+                    a,b,max_improvement))
                 display(state)
                 print(f"number of conflicts left:\t {nb_conflicts(state)}")
              
@@ -270,20 +271,18 @@ def hill_climbing(values, printoutput=False):
 
 
 
-def simulated_annealing(values, a=0.99, t=3.0, printoutput=False):
-    all_pairs = get_all_pairs(values)
-    solution = random_fill(values) #state initialization
+def simulated_annealing(values, a=0.99, t0=3, printoutput=False):
+    t = t0
+    solution = random_fill(values.copy()) #state initialization
     conflicts = nb_conflicts(solution)    #nb of conflicts in current state
 
-    if printoutput: print(all_pairs)
-
-    for _ in range(20000):
+    for _ in range(10000):
         # if no conflicts => sudoku is solved. otherwise keep changing state
         if conflicts == 0:
             break
     
         #pick a pair to swap
-        s1, s2 = random.choice(all_pairs)
+        s1, s2 = get_random_pair(values)
 
         #calculate potential improvement 
         improvement = net_improvement_from_swap(solution, s1, s2)
@@ -306,26 +305,45 @@ def simulated_annealing(values, a=0.99, t=3.0, printoutput=False):
 
         #decrease temperature at each iteration
         t *= a
+        
        
     return solution
 
 
 
-def get_all_pairs(constraints):
+def get_all_pairs(values):
     """return list of all pairs of squares in each 3x3 unit whose values are 
     not fixed.
     The pairs are not necessarily 'swappable'. Their present-state values must be 
     evaluated before each swap if constraints must be met"""
     pairs = []
-    for unit in units3x3:
-        mutables = [s for s in unit if len(constraints[s]) > 1]
+    for block in blocklist:
+        # list of non-fixed squares in the block
+        mutables = [s for s in block if len(values[s]) > 1] 
+        # add pairs of non-fixed squares in the block to result
         pairs.extend([pair for pair in combinations(mutables, 2)])
 
     return pairs
+
+
+def get_random_pair(values):
+    """return a pair of squares in the same 3x3 block whose values are not fixed"""
+    s1, s2 = None, None
+    while True:
+        s1 = random.choice([k for k in values.keys()])
+
+        if len(values[s1]) > 1:
+
+            s2 = random.choice(
+                        [s for s in blocks[s1] if len(values[s]) > 1 and s != s1])
+            break
+
+    return s1,s2
+    
     
 
 
-def net_improvement_from_swap(values, s1, s2):
+def net_improvement_from_swap(solution, s1, s2):
     """return the difference in the number of conflicts in a grid (values) from
     before and after swapping the values in s1, s2
     Total improvements vary from -4 to +4 and the higher the number the better:
@@ -336,30 +354,30 @@ def net_improvement_from_swap(values, s1, s2):
     for i in range(2):        #for row, column lines
         if s1[i] != s2[i]:    #if the pair doesn't share lines
             # line of s1
-            l = [values[s] for s in cols_rows[s1[i]]]   
+            l = [solution[s] for s in cols_rows[s1[i]]]   
             # 1) if digit from s2 was already in s1's line, the swap will worsen the state
-            improvement -= 1 if values[s2] in l else 0 
+            improvement -= 1 if solution[s2] in l else 0 
 
             # 2) if s1 was a duplicate digit in its line, the swap will improve the state
-            improvement += 1 if l.count(values[s1]) > 1 else 0 
+            improvement += 1 if l.count(solution[s1]) > 1 else 0 
 
             #do the same for the line of s2
-            l = [values[s] for s in cols_rows[s2[i]]]
-            improvement -= 1 if values[s1] in l else 0 
-            improvement += 1 if l.count(values[s2]) > 1 else 0
+            l = [solution[s] for s in cols_rows[s2[i]]]
+            improvement -= 1 if solution[s1] in l else 0 
+            improvement += 1 if l.count(solution[s2]) > 1 else 0
 
     return improvement
 
 
         
 #not used in hill-climbing except to compare values before and after running algorithm
-def nb_conflicts(values):
-    """number of conflicts i.e. the total number of missing digits per unit
-    in the entire grid """
+def nb_conflicts(solution):
+    """number of conflicts i.e. the total number of missing digits per row and
+    column units in the entire grid """
     conflicts = 0
-    for unit in unitlist:
+    for unit in linelist:
         #conflicts = nb of missing digits in line
-        values_in_unit = [values[s] for s in unit]
+        values_in_unit = [solution[s] for s in unit]
         conflicts += len([d for d in digits if d not in values_in_unit])
     return conflicts
 
@@ -368,8 +386,8 @@ def nb_conflicts(values):
 def random_fill(values):
     """fill each 3x3 unit randomly in such a way that there are no conflict 
     within each unit"""
-    for unit in units3x3:
-        values = random_fill_unit(values, unit)
+    for block in blocklist:
+        values = random_fill_unit(values, block)
     return values
 
 
@@ -377,9 +395,6 @@ def random_fill_unit(values, unit):
     """fill a unit with random numbers, without conflict within that unit"""
     if values is False:
         return False
-
-    #display(values)
-    #print("\n")
     
     if all(len(values[s]) == 1 for s in unit):
         return values #unit is filled
@@ -499,20 +514,25 @@ if __name__ == '__main__':
     parser.add_argument('--alpha', type=float)
     parser.add_argument('--t', type=float)
     
-    #args = parser.parse_args()
+
 
     #set commandline arguments 
     #args = parser.parse_args(['hc']) #for hill climbing
     #args = parser.parse_args(['dfs', '--heuristic', 'naked_pairs']) # for dfs, norvig
     args = parser.parse_args(['sa']) #for simulated annealing
-    
     test()
+    """
+    for i in range(1, 20, 3):
+        args.t = i / 2.0
+        print("T = ", args.t)
+        solve_all(from_file("1000sudoku2.txt"),"", None)
+    """
+    
 
     # Local test with display
     #print('-------------------- Test with one grid START --------------------')
     #values = solve(grid3, True) # Quick test with grid almost complete
     #values = solve(grid2, True) # Longer test
-
     #print('--------------------  Test with one grid END  --------------------')
 
     #solve_all(from_file("MesSudokus/top95.txt      "), "top95     ", 9.0)
@@ -521,10 +541,10 @@ if __name__ == '__main__':
     #solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
     #solve_all(from_file("MesSudokus/1000sudoku.txt "), "1000sudoku", None)
 
-    #solve_all(from_file("top95.txt"), "top95", None)
+    solve_all(from_file("top95.txt"), "top95", None)
     #solve_all(from_file("hardest.txt"), "hardest", None)
     #solve_all([random_puzzle() for _ in range(100)], "random", 100.0)
-    solve_all(from_file("1000sudoku2.txt"),"", None)
+    #solve_all(from_file("1000sudoku2.txt"),"", None)
     #solve_all(from_file("test.txt"), "", None)
     
     #print("FINAL number of conflicts left:\t", nb_conflicts(values))
