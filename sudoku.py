@@ -334,7 +334,6 @@ def get_random_pair(values):
         s1 = random.choice([k for k in values.keys()])
 
         if len(values[s1]) > 1:
-
             s2 = random.choice(
                         [s for s in blocks[s1] if len(values[s]) > 1 and s != s1])
             break
