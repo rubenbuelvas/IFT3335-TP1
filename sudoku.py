@@ -271,8 +271,8 @@ def hill_climbing(values, printoutput=False):
 
 
 
-def simulated_annealing(values, a=0.99, t0=3, printoutput=False):
-    t = t0
+def simulated_annealing(values, a=0.99, t=3, printoutput=False):
+
     solution = random_fill(values.copy()) #state initialization
     conflicts = nb_conflicts(solution)    #nb of conflicts in current state
 
@@ -305,6 +305,7 @@ def simulated_annealing(values, a=0.99, t0=3, printoutput=False):
 
         #decrease temperature at each iteration
         t *= a
+
         
        
     return solution
@@ -469,6 +470,7 @@ def solve_all(grids, name='', showif=0.0):
             print("Number of conflicts remaining after solve attempt with"
                   + " Simulated Annealing: avg %.2f, min %i, max %i"%(
                        sum(conflicts)/N, min(conflicts), max(conflicts)))
+        print("\n")
 
 
 def solved(values):
@@ -499,55 +501,57 @@ grid3 = '4..27.6..798156234.2.84...7237468951849531726561792843.82.15479.7..243.
 hard1 = '.....6....59.....82....8....45........3........6..3.54...325..6..................'
 
 
+
+def demo():
+    
+    # Local test with display
+    print('-------------------- Test with one grid START --------------------')
+    #values = solve(grid3, True) # Quick test with grid almost complete
+    values = solve(grid2, True) # Longer test
+    print("FINAL number of conflicts left:\t", nb_conflicts(values))
+    print('--------------------  Test with one grid END  --------------------')
+
+
+def benchmarks():
+    solve_all(from_file("./MesSudokus/top95.txt"),    "   top95   ", 9.0)
+    solve_all(from_file("MesSudokus/easy50.txt"),     "  easy50   ", None)
+    solve_all(from_file("MesSudokus/hardest.txt"),    "  hardest  ", None)
+    solve_all(from_file("MesSudokus/100sudoku.txt"),  " 100sudoku ", None)
+    solve_all(from_file("MesSudokus/1000sudoku.txt"), "1000sudoku ", None)
+    solve_all([random_puzzle() for _ in range(100)],  "   random  ",100.0)
+    
 if __name__ == '__main__':
+    test()
+    
     parser = argparse.ArgumentParser()
     parser.add_argument('--heuristic',
                         default='random',
                         choices=['random', 'norvig', 'naked_pairs'],
                         help='choice of heuristics fonction')
     parser.add_argument('method',
-                        choices=['dfs','hc', 'sa'],
+                        choices=['dfs','hc','sa'],
                         default = 'dfs',
                         help='available methods are:\n\
                         -Depth-first-search with a choice of heuristic function;\n\
                         -Hill-climbing.')
     parser.add_argument('--alpha', type=float)
     parser.add_argument('--t', type=float)
-    
+    parser.add_argument('--demo', action='store_true')
+    parser.add_argument('--benchmarks', action='store_true')
+    args = parser.parse_args()
 
-
-    #set commandline arguments 
+    #simulate commandline arguments 
     #args = parser.parse_args(['hc']) #for hill climbing
     #args = parser.parse_args(['dfs', '--heuristic', 'naked_pairs']) # for dfs, norvig
-    args = parser.parse_args(['sa']) #for simulated annealing
-    test()
-    """
-    for i in range(1, 20, 3):
-        args.t = i / 2.0
-        print("T = ", args.t)
-        solve_all(from_file("1000sudoku2.txt"),"", None)
-    """
+    #args = parser.parse_args(['sa']) #for simulated annealing
+
+    if args.demo:
+        demo()
+
+    if args.benchmarks:
+        benchmarks()
+        
     
-
-    # Local test with display
-    #print('-------------------- Test with one grid START --------------------')
-    #values = solve(grid3, True) # Quick test with grid almost complete
-    #values = solve(grid2, True) # Longer test
-    #print('--------------------  Test with one grid END  --------------------')
-
-    #solve_all(from_file("MesSudokus/top95.txt      "), "top95     ", 9.0)
-    #solve_all(from_file("MesSudokus/easy50.txt     "), "easy50    ", None)
-    #solve_all(from_file("MesSudokus/hardest.txt    "), "hardest   ", None)
-    #solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
-    #solve_all(from_file("MesSudokus/1000sudoku.txt "), "1000sudoku", None)
-
-    solve_all(from_file("top95.txt"), "top95", None)
-    #solve_all(from_file("hardest.txt"), "hardest", None)
-    #solve_all([random_puzzle() for _ in range(100)], "random", 100.0)
-    #solve_all(from_file("1000sudoku2.txt"),"", None)
-    #solve_all(from_file("test.txt"), "", None)
-    
-    #print("FINAL number of conflicts left:\t", nb_conflicts(values))
 
 ## References used:
 ## http://www.scanraid.com/BasicStrategies.htm
