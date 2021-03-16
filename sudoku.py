@@ -28,6 +28,7 @@
 
 import argparse
 import copy
+import heapq as hq
 from itertools import combinations
 import math
 
@@ -183,6 +184,8 @@ def search(values):
         s = norvig(values)
     elif (args.heuristic == 'naked_pairs'):
         s = naked_pairs(values)
+    elif (args.heuristic == 'degree'):
+        s = most_impactful_min(values)
     #else raise ValueError
 
     # try possible numbers for s in random order
@@ -220,7 +223,35 @@ def naked_pairs(values):
     return norvig(values)
 
 
+def most_impactful_min(values):
+    """Degree heuristic.
+    When there is a tiebreaker between squares for minimum possible values, 
+    choose the one for which assigning a value will impact the most neighbours"""
+    candidates = [] #candidate squares to return
 
+    #order square by their number of possible values with heapqueue
+    value_key = [(len(values[s]),s) for s in squares if len(values[s]) > 1]
+    hq.heapify(value_key)
+
+    #head of the heap is the minimum. Add it to list of candidates
+    minimum = hq.heappop(value_key)
+    candidates.append(minimum[1])
+
+    #find all others that have the same minimum number of possible values
+    while(value_key):
+        head = hq.heappop(value_key)
+        if head[0] == minimum[0]:
+            candidates.append(head[1])
+        else:
+            break 
+
+    #choose the square among candidates that has the most number of non-fixed peers 
+    n,s = max((len([p for p in peers[s] if len(values[p]) > 1]),s)
+                  for s in candidates)
+
+    return s
+    
+    
 ################ Hill Climbing ################
 blocklist = unitlist[18:] # list of blocks (3x3 units)
 blocks = dict((s,u) for u in blocklist for s in squares if s in u)
@@ -564,7 +595,7 @@ if __name__ == '__main__':
     
     parser.add_argument('--heuristic',
                         default='random',
-                        choices=['random', 'norvig', 'naked_pairs'],
+                        choices=['random', 'norvig', 'naked_pairs', 'degree'],
                         help='choice of heuristics fonction')
 
     parser.add_argument('--alpha', type=float, help="To specify the value of the "
@@ -609,3 +640,5 @@ if __name__ == '__main__':
 ## http://www.sudokudragon.com/sudokustrategy.htm
 ## http://www.krazydad.com/blog/2005/09/29/an-index-of-sudoku-strategies/
 ## http://www2.warwick.ac.uk/fac/sci/moac/currentstudents/peter_cock/python/sudoku/
+## Rosenschein, J. Introduction to Artificial Intelligence, The Hebrew University of
+## Jerusalem https://www.cs.huji.ac.il/~ai/projects/2017/csp/Sudoku_2/files/paper.pdf
