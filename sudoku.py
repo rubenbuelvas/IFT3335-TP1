@@ -92,7 +92,8 @@ def grid_values(grid):
 
 def assign(values, s, d, unit=None):
     """Eliminate all the other values (except d) from values[s] and propagate.
-    Return values, except return False if a contradiction is detected."""
+    Return values, except return False if a contradiction is detected.
+    If a unit is specified, propagate within that unit only"""
     other_values = values[s].replace(d, '')
     if all(eliminate(values, s, d2, unit) for d2 in other_values):
         return values
@@ -102,7 +103,8 @@ def assign(values, s, d, unit=None):
 
 def eliminate(values, s, d, unit=None):
     """Eliminate d from values[s]; propagate when values or places <= 2.
-    Return values, except return False if a contradiction is detected."""
+    Return values, except return False if a contradiction is detected.
+    if a unit is specified, propagate within that unit only"""
     p = peers[s]
     units_to_check = units[s]
     if unit:
@@ -145,15 +147,22 @@ def display(values):
 
 ################ Search ################
 
-def solve(grid, printoutput=False):
+def solve(grid, printoutput=False, show_solution=False):
     if args.method == "hc":
-        return hill_climbing(parse_grid(grid), printoutput)
+        result = hill_climbing(parse_grid(grid), printoutput)
     
-    if args.method == "sa":
-        return simulated_annealing(parse_grid(grid), printoutput=printoutput)
+    elif args.method == "sa":
+        result = simulated_annealing(parse_grid(grid), printoutput=printoutput)
     
     elif args.method == "dfs":
-        return search(parse_grid(grid))
+        result = search(parse_grid(grid))
+    
+    elif args.method == "rf":
+        result = random_fill(parse_grid(grid), printoutput=printoutput)
+    if show_solution:
+        display(result)
+        print("remaining conflicts: ", nb_conflicts(result))
+    return result
 
     
 def search(values):
@@ -214,7 +223,7 @@ linelist = unitlist[0:18]
 cols_rows = dict(zip(cols+rows, linelist)) #all row and column units
 
 
-
+iterations = []
 def hill_climbing(values, printoutput=False):
     """Hill climbing algorithm. 
     The initial state has each square filled with one randomly chosen possible
@@ -229,27 +238,28 @@ def hill_climbing(values, printoutput=False):
     all_pairs = get_all_pairs(constraints)
 
     if printoutput:
+        print("constraints:")
+        display(constraints)
         print("***initial grid***")
         display(state)
         print("initial nb of conflicts", nb_conflicts(state))
-
+    nb_iterations = 0
     while (True):
+        
         # if no conflicts => sudoku is solved. otherwise keep improving state
         if conflicts == 0:
             break
-        
+        nb_iterations += 1
         max_improvement = 0
         a, b = None, None #best pair found for swap (for debug/demo purposes)
 
         for s1, s2 in all_pairs:
-            #ensure the swap of their current values is possible
-            if (state[s1] in constraints[s2] and state[s2] in constraints[s1]):
-                #calculate improvement from swapping (s1, s2)
-                improvement = net_improvement_from_swap(state, s1, s2)
-            
-                if improvement > max_improvement:
-                    max_improvement = improvement
-                    a, b = s1, s2
+            #calculate improvement from swapping (s1, s2)
+            improvement = net_improvement_from_swap(state, s1, s2)
+
+            if improvement > max_improvement:
+                max_improvement = improvement
+                a, b = s1, s2
                    
         if max_improvement: #found improvement
            
@@ -264,19 +274,20 @@ def hill_climbing(values, printoutput=False):
              
         else: #else there was no improvement from previous state
             break
-        
+    iterations.append(nb_iterations)
     #algorithm ends if the sudoku is solved or when it can no longer improve score
     return state
 
 
 
-
-def simulated_annealing(values, a=0.99, t=3, printoutput=False):
+def simulated_annealing(values, a=0.99, t=3.0, printoutput=False):
+    if args.t:
+        t = args.t
 
     solution = random_fill(values.copy()) #state initialization
     conflicts = nb_conflicts(solution)    #nb of conflicts in current state
 
-    for _ in range(10000):
+    while t > 0.001:
         # if no conflicts => sudoku is solved. otherwise keep changing state
         if conflicts == 0:
             break
@@ -295,19 +306,17 @@ def simulated_annealing(values, a=0.99, t=3, printoutput=False):
         if improvement >= 0 or random.uniform(0, 1) <= math.exp(improvement/t):
             solution[s1], solution[s2] = solution[s2], solution[s1]
             conflicts -= improvement
-            
+
             if printoutput:
                 cause = "improvement" if improvement > 0 else "temperature"
                 print(f"Swapping {s1} and {s2} because {cause} allows."
                       + f" Improvement = {improvement}")
                 display(solution)
                 print(f"number of conflicts left:\t {nb_conflicts(solution)}")
+                #decrease temperature at each iteration
 
-        #decrease temperature at each iteration
         t *= a
 
-        
-       
     return solution
 
 
@@ -327,6 +336,7 @@ def get_all_pairs(values):
     return pairs
 
 
+
 def get_random_pair(values):
     """return a pair of squares in the same 3x3 block whose values are not fixed"""
     s1, s2 = None, None
@@ -341,7 +351,6 @@ def get_random_pair(values):
     return s1,s2
     
     
-
 
 def net_improvement_from_swap(solution, s1, s2):
     """return the difference in the number of conflicts in a grid (values) from
@@ -383,11 +392,15 @@ def nb_conflicts(solution):
 
 
 
-def random_fill(values):
+def random_fill(values, printoutput=False):
     """fill each 3x3 unit randomly in such a way that there are no conflict 
     within each unit"""
     for block in blocklist:
         values = random_fill_unit(values, block)
+    if printoutput:
+        print("*** initial grid (hill climbing) ***")
+        display(values)
+        print("initial nb of conflicts", nb_conflicts(values))
     return values
 
 
@@ -444,7 +457,7 @@ def solve_all(grids, name='', showif=0.0):
         t = time.process_time() - start
         conflicts = 0
         # Keep a count of unresolved conflicts for hill-climbing method
-        if args.method == 'hc' or args.method == 'sa':
+        if args.method == 'hc' or args.method == 'sa' or args.method == 'rf':
             conflicts = nb_conflicts(values)
         ## Display puzzles that take long enough
         if showif is not None and t > showif:
@@ -469,6 +482,10 @@ def solve_all(grids, name='', showif=0.0):
             print("Number of conflicts remaining after solve attempt with"
                   + " Simulated Annealing: avg %.2f, min %i, max %i"%(
                        sum(conflicts)/N, min(conflicts), max(conflicts)))
+        if args.method == "rf": # Random initial fill
+            print("Number of conflicts remaining after solve attempt by randomly"
+                + " filling after parsing the grid: avg %.3f, min %i, max %i" % (
+                    sum(conflicts) / N, min(conflicts), max(conflicts)))
         print("\n")
 
 
@@ -501,54 +518,81 @@ hard1 = '.....6....59.....82....8....45........3........6..3.54...325..6........
 
 
 
-def demo():
+def demo(grid=grid2):
     
     # Local test with display
     print('-------------------- Test with one grid START --------------------')
     #values = solve(grid3, True) # Quick test with grid almost complete
-    values = solve(grid2, True) # Longer test
+    values = solve(grid, True) # Longer test
     print("FINAL number of conflicts left:\t", nb_conflicts(values))
     print('--------------------  Test with one grid END  --------------------')
 
 
 def benchmarks():
-    solve_all(from_file("./MesSudokus/top95.txt"),    "   top95   ", 9.0)
-    solve_all(from_file("MesSudokus/easy50.txt"),     "  easy50   ", None)
-    solve_all(from_file("MesSudokus/hardest.txt"),    "  hardest  ", None)
-    solve_all(from_file("MesSudokus/100sudoku.txt"),  " 100sudoku ", None)
-    solve_all(from_file("MesSudokus/1000sudoku.txt"), "1000sudoku ", None)
-    solve_all([random_puzzle() for _ in range(100)],  "   random  ",100.0)
-    
+    solve_all(from_file("./MesSudokus/top95.txt"),    "   top95   ", args.showif)
+    solve_all(from_file("MesSudokus/easy50.txt"),     "  easy50   ", args.showif)
+    solve_all(from_file("MesSudokus/hardest.txt"),    "  hardest  ", args.showif)
+    solve_all(from_file("MesSudokus/100sudoku.txt"),  " 100sudoku ", args.showif)
+    #solve_all(from_file("MesSudokus/1000sudoku.txt"), "1000sudoku ", args.showif)
+    solve_all([random_puzzle() for _ in range(100)],  "   random  ",  args.showif)
+
+        
 if __name__ == '__main__':
+    random.seed(10)
     test()
+    #command line arguments and options 
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('method',
+                        choices=['dfs','hc','sa','rf'],
+                        default = 'dfs',
+                        help='Available methods are:\n\
+                        -Depth-first-search with a choice of heuristic function;\n\
+                        -Hill-climbing.')
     
-    parser = argparse.ArgumentParser()
+    parser.add_argument('sudoku', nargs='?', type=str, help="A string representing a sudoku "
+                        + "problem instance, where\nthe unknown values are either "
+                        + "'.' or '0'.\nExample:2000600000070040860000013000000000"
+                        + "400900000004\n80000710900078000000050002020600501")
+    
     parser.add_argument('--heuristic',
                         default='random',
                         choices=['random', 'norvig', 'naked_pairs'],
                         help='choice of heuristics fonction')
-    parser.add_argument('method',
-                        choices=['dfs','hc','sa'],
-                        default = 'dfs',
-                        help='available methods are:\n\
-                        -Depth-first-search with a choice of heuristic function;\n\
-                        -Hill-climbing.')
-    parser.add_argument('--alpha', type=float)
-    parser.add_argument('--t', type=float)
+
+    parser.add_argument('--alpha', type=float, help="To specify the value of the "
+                        + "cooling schedule alpha\nwhen the simulated annealing "
+                        + "method is chosen. \nDefault = 0.99")
+    parser.add_argument('--t', type=float, help="To specify the initial temperature"
+                        + " when the simulated\nannealing algorithm is chosen.\n"
+                        + "Default = 3.0")
     parser.add_argument('--demo', action='store_true')
     parser.add_argument('--benchmarks', action='store_true')
+    parser.add_argument('--file', type=argparse.FileType('r'))
+    
+   
+    parser.add_argument('--showif', type=float, default=None)
     args = parser.parse_args()
 
     #simulate commandline arguments 
     #args = parser.parse_args(['hc']) #for hill climbing
     #args = parser.parse_args(['dfs', '--heuristic', 'naked_pairs']) # for dfs, norvig
     #args = parser.parse_args(['sa']) #for simulated annealing
-
+    
+    if args.file:
+        solve_all(args.file.read().strip().split('\n'), "sudoku", args.showif)
+    elif args.sudoku:
+        solve(args.sudoku, False, True)
+        
     if args.demo:
-        demo()
+        if args.sudoku:
+            demo(args.sudoku)
+        else:
+            demo()
 
     if args.benchmarks:
         benchmarks()
+
+    
         
     
 
