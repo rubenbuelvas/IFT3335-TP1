@@ -148,6 +148,7 @@ def display(values):
 ################ Search ################
 
 def solve(grid, printoutput=False, show_solution=False):
+
     if args.method == "hc":
         result = hill_climbing(parse_grid(grid), printoutput)
     
@@ -159,9 +160,13 @@ def solve(grid, printoutput=False, show_solution=False):
     
     elif args.method == "rf":
         result = random_fill(parse_grid(grid), printoutput=printoutput)
-    if show_solution:
+        
+    if show_solution: #display before and after
+        display(grid_values(grid))
+        print()
         display(result)
         print("remaining conflicts: ", nb_conflicts(result))
+        
     return result
 
     
@@ -384,7 +389,7 @@ def nb_conflicts(solution):
     """number of conflicts i.e. the total number of missing digits per row and
     column units in the entire grid """
     conflicts = 0
-    for unit in linelist:
+    for unit in unitlist:
         #conflicts = nb of missing digits in line
         values_in_unit = [solution[s] for s in unit]
         conflicts += len([d for d in digits if d not in values_in_unit])
@@ -462,7 +467,7 @@ def solve_all(grids, name='', showif=0.0):
         ## Display puzzles that take long enough
         if showif is not None and t > showif:
             display(grid_values(grid))
-            print("\n")
+            print()
             if values: display(values)
             print('(%.2f seconds)\n' % t)
         return (t, solved(values), conflicts)
@@ -486,7 +491,7 @@ def solve_all(grids, name='', showif=0.0):
             print("Number of conflicts remaining after solve attempt by randomly"
                 + " filling after parsing the grid: avg %.3f, min %i, max %i" % (
                     sum(conflicts) / N, min(conflicts), max(conflicts)))
-        print("\n")
+        print()
 
 
 def solved(values):
