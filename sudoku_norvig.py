@@ -245,7 +245,7 @@ def search(values, search_method):
         f"Unknown search method {search_method}. Available search methods are {search_methods}")  # DGNEW
 
     if search_method == 'Brute Force':
-        # choose the first unfilled square
+        # choose a random unfilled square
         s = random.choice([s_tmp for s_tmp in squares if len(values[s_tmp]) > 1])
     elif search_method == 'Norvig Heuristic':
         # Chose the unfilled square s with the fewest possibilities
@@ -401,42 +401,42 @@ hard1 = '.....6....59.....82....8....45........3........6..3.54...325..6........
 
 if __name__ == '__main__':
     test()
-    # solve_all(from_file("top95.txt"), "95sudoku", None)
-    # solve_all(from_file("easy50.txt", '========'), "easy", None)
-    # solve_all(from_file("hardest.txt"), "hardest", None)
+    # solve_all(from_file("MesSudokus/top95.txt"), "95sudoku", None)
+    # solve_all(from_file("MesSudokus/easy50.txt", '========'), "easy", None)
+    # solve_all(from_file("MesSudokus/hardest.txt"), "hardest", None)
     # solve_all([random_puzzle() for _ in range(99)], "random", 100.0)
 
     # DG Added a parameter for search method. Note: decrease the decimal value in order to show longer puzzles
-    solve_all(from_file("NakedPair.txt"), "NakedPT", 1.0, 'Brute Force')
+    solve_all(from_file("MesSudokus/MesSudokus/NakedPair.txt"), "NakedPT", 1.0, 'Brute Force')
     # print('-----------')
-    # solve_all(from_file("easy50.txt"), "easy50 ", 1.0, 'Brute Force')
-    # solve_all(from_file("easy50.txt"), "easy50 ", 1.0, 'Norvig Heuristic')
-    # solve_all(from_file("easy50.txt"), "easy50 ", 1.0, 'Norvig Improved')
+    # solve_all(from_file("MesSudokus/easy50.txt"), "easy50 ", 1.0, 'Brute Force')
+    # solve_all(from_file("MesSudokus/easy50.txt"), "easy50 ", 1.0, 'Norvig Heuristic')
+    # solve_all(from_file("MesSudokus/easy50.txt"), "easy50 ", 1.0, 'Norvig Improved')
     # print('-----------')
-    # solve_all(from_file("top95.txt"), "top95  ", 1.0, 'Brute Force')
-    # solve_all(from_file("top95.txt"), "top95  ", 1.0, 'Norvig Heuristic')
-    # solve_all(from_file("top95.txt"), "top95  ", 1.0, 'Norvig Improved')
+    # solve_all(from_file("MesSudokus/top95.txt"), "top95  ", 1.0, 'Brute Force')
+    # solve_all(from_file("MesSudokus/top95.txt"), "top95  ", 1.0, 'Norvig Heuristic')
+    # solve_all(from_file("MesSudokus/top95.txt"), "top95  ", 1.0, 'Norvig Improved')
     # print('-----------')
-    # solve_all(from_file("hardest.txt"), "hardest", 1.0, 'Brute Force')
-    # solve_all(from_file("hardest.txt"), "hardest", 1.0, 'Norvig Heuristic')
-    # solve_all(from_file("hardest.txt"), "hardest", 1.0, 'Norvig Improved')
+    # solve_all(from_file("MesSudokus/hardest.txt"), "hardest", 1.0, 'Brute Force')
+    # solve_all(from_file("MesSudokus/hardest.txt"), "hardest", 1.0, 'Norvig Heuristic')
+    # solve_all(from_file("MesSudokus/hardest.txt"), "hardest", 1.0, 'Norvig Improved')
     # print('-----------')
-    # solve_all(from_file("100sudoku.txt"), "100puz ", 1.0, 'Brute Force')
-    # solve_all(from_file("100sudoku.txt"), "100puz ", 1.0, 'Norvig Heuristic')
-    # solve_all(from_file("100sudoku.txt"), "100puz ", 1.0, 'Norvig Improved')
+    # solve_all(from_file("MesSudokus/100sudoku.txt"), "100puz ", 1.0, 'Brute Force')
+    # solve_all(from_file("MesSudokus/100sudoku.txt"), "100puz ", 1.0, 'Norvig Heuristic')
+    # solve_all(from_file("MesSudokus/100sudoku.txt"), "100puz ", 1.0, 'Norvig Improved')
     # print('-----------')
-    # solve_all(from_file("1000sudoku.txt"), "1000puz", 1.0, 'Brute Force')
-    # solve_all(from_file("1000sudoku.txt"), "1000puz", 1.0, 'Norvig Heuristic')
-    # solve_all(from_file("1000sudoku.txt"), "1000puz", 1.0, 'Norvig Improved')
+    # solve_all(from_file("MesSudokus/1000sudoku.txt"), "1000puz", 1.0, 'Brute Force')
+    # solve_all(from_file("MesSudokus/1000sudoku.txt"), "1000puz", 1.0, 'Norvig Heuristic')
+    # solve_all(from_file("MesSudokus/1000sudoku.txt"), "1000puz", 1.0, 'Norvig Improved')
     # print('-----------')
-    # solve_all(from_file("1puzzle.txt"), "1puzzle", 1.0, 'Brute Force')
-    # solve_all(from_file("1puzzle.txt"), "1puzzle", 1.0, 'Norvig Heuristic')
-    # solve_all(from_file("1puzzle.txt"), "1puzzle", 1.0, 'Norvig Improved')
+    # solve_all(from_file("MesSudokus/1puzzle.txt"), "1puzzle", 1.0, 'Brute Force')
+    # solve_all(from_file("MesSudokus/1puzzle.txt"), "1puzzle", 1.0, 'Norvig Heuristic')
+    # solve_all(from_file("MesSudokus/1puzzle.txt"), "1puzzle", 1.0, 'Norvig Improved')
     # print('-----------')
-    # solve_all(from_file("NakedPair.txt"), "NakedPT", 1.0,
-    #           'Brute Force')  # DG file created from https://www.sudokuoftheday.com/techniques/naked-pairs-triples/
-    # solve_all(from_file("NakedPair.txt"), "NakedPT", 1.0, 'Norvig Heuristic')
-    # solve_all(from_file("NakedPair.txt"), "NakedPT", 1.0, 'Norvig Improved')
+    # DG file created from https://www.sudokuoftheday.com/techniques/naked-pairs-triples/
+    # solve_all(from_file("MesSudokus/NakedPair.txt"), "NakedPT", 1.0, 'Brute Force')
+    # solve_all(from_file("MesSudokus/NakedPair.txt"), "NakedPT", 1.0, 'Norvig Heuristic')
+    # solve_all(from_file("MesSudokus/NakedPair.txt"), "NakedPT", 1.0, 'Norvig Improved')
 
 ## References used:
 ## http://www.scanraid.com/BasicStrategies.htm
