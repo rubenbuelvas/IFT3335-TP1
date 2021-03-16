@@ -246,7 +246,7 @@ def search(values, search_method):
 
     if search_method == 'Brute Force':
         # choose the first unfilled square
-        s = [s_tmp for s_tmp in squares if len(values[s_tmp]) > 1][0]
+        s = random.choice([s_tmp for s_tmp in squares if len(values[s_tmp]) > 1])
     elif search_method == 'Norvig Heuristic':
         # Chose the unfilled square s with the fewest possibilities
         n, s = min((len(values[s]), s) for s in squares if len(values[s]) > 1)  # n is the number of possible values for this square
