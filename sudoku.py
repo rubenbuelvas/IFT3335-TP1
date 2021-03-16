@@ -416,13 +416,42 @@ def random_fill_unit(values, unit):
     
     if all(len(values[s]) == 1 for s in unit):
         return values #unit is filled
-    s = random.choice([s for s in unit if len(values[s]) > 1])
-    #n,s = min([(len(values[s]), s) for s in unit if len(values[s]) > 1])
+    #s = random.choice([s for s in unit if len(values[s]) > 1])
+    n,s = min([(len(values[s]), s) for s in unit if len(values[s]) > 1])
         
     return some(random_fill_unit(assign(values.copy(), s, d, unit),unit)
                                  for d in shuffled(values[s]))
-                                
 
+#another random_fill method implemented the 'dumb' way that doesn't improve on the other one
+def random_fill_unit2(values, unit):
+    #display(values)
+    result = values.copy()
+    remaining_digits = list(digits)
+    squares_to_assign = []
+    for s in unit:
+        if len(values[s]) == 1:
+            #print(values[s])
+            #print(digits_to_assign)
+            remaining_digits.remove(values[s])
+        else:
+            squares_to_assign.append(s)
+            
+    #until each square has a digit that respects its values constraints,
+    #put the remaining digits in random order and try to assign them to
+    #the squares whose values are not fixed. 
+    assigned = False
+    while(not assigned):
+        assigned = True
+        ds = shuffled(remaining_digits)
+        for i in range(len(ds)):
+            if ds[i] in values[squares_to_assign[i]]:
+                result[squares_to_assign[i]] = ds[i]
+            else:
+                assigned = False
+                break
+        
+    return(result)
+            
 
 ################ Utilities ################
 
@@ -455,43 +484,46 @@ def solve_all(grids, name='', showif=0.0):
     When showif is a number of seconds, display puzzles that take longer.
     When showif is None, don't display any puzzles."""
 
+    method_descriptions = {'hc' : 'Hill-Climbing',
+                               'dfs' : 'Backtracking',
+                               'sa' : 'Simulated Annealing',
+                               'rf' : 'randomly filling after parsing the grid'}
+
     def time_solve(grid):
         # start = time.clock()
         start = time.process_time()
         values = solve(grid)
         t = time.process_time() - start
         conflicts = 0
-        # Keep a count of unresolved conflicts for hill-climbing method
-        if args.method == 'hc' or args.method == 'sa' or args.method == 'rf':
-            conflicts = nb_conflicts(values)
+        # Keep a count of unresolved conflicts
+        got_solved = solved(values)
+        if not got_solved: conflicts = nb_conflicts(values)
         ## Display puzzles that take long enough
         if showif is not None and t > showif:
             display(grid_values(grid))
             print()
             if values: display(values)
             print('(%.2f seconds)\n' % t)
-        return (t, solved(values), conflicts)
+        return (t, got_solved, conflicts)
 
     times, results, conflicts = zip(*[time_solve(grid) for grid in grids])
     
     N = len(grids)
     if N > 1:
-        print("Solved %d of %d %s puzzles within %.2f secs (avg %.2f secs (%d Hz), max %.2f secs). Method=%s" % (
+        
+        print(f"* Method: {method_descriptions[args.method]} *")
+        if args.method == 'dfs':
+            print(f'Heuristic: {args.heuristic}')
+        print("Solved %d of %d %s puzzles within %.2f secs (avg %.2f secs (%d Hz), max %.2f secs)." % (
             sum(results), N, name, sum(times), sum(times) / N, N / sum(times),
-                  max(times), args.method))
-        if args.method == "hc":
-            print("Number of conflicts remaining after solve attempt with"
-                  + " Hill-Climbing: avg %.2f, min %i, max %i"%(
-                       sum(conflicts)/N, min(conflicts), max(conflicts)))
-        if args.method == "sa":
-            print("Number of conflicts remaining after solve attempt with"
-                  + " Simulated Annealing: avg %.2f, min %i, max %i"%(
-                       sum(conflicts)/N, min(conflicts), max(conflicts)))
-        if args.method == "rf": # Random initial fill
-            print("Number of conflicts remaining after solve attempt by randomly"
-                + " filling after parsing the grid: avg %.3f, min %i, max %i" % (
-                    sum(conflicts) / N, min(conflicts), max(conflicts)))
-        print()
+                  max(times)))
+        
+        
+        print("Number of conflicts remaining after solve attempt:"
+                  + " avg %.2f, min %i, max %i\n"%(
+                        sum(conflicts)/N, min(conflicts), max(conflicts)))
+       
+     
 
 
 def solved(values):
