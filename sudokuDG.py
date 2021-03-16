@@ -148,6 +148,8 @@ def solve(grid, printoutput=False):
         return hill_climbing(parse_grid(grid), printoutput)
     elif args.method == "sa":
         return simulated_annealing(parse_grid(grid), printoutput)
+    elif args.method == "rf":
+        return random_initial_fill(parse_grid(grid), printoutput)
     elif args.method == "dfs":
         return search(parse_grid(grid))
     else:
@@ -267,7 +269,7 @@ def simulated_annealing(values, printoutput=False):
         T = schedule[t]
         if debug: print(f"----- LOOP # {t} of {len(schedule)} with T={T} -------------------------------------------------------------------------------------")  # DGTEMP
 
-        if T == 0: return current_state # DGTEMP: Hugo Larochelle's algorithm doesn't stop if T is ZERO. It simply goes through all steps of the schedule
+        if T < 0.001: return current_state # DGTEMP: Hugo Larochelle's algorithm doesn't stop if T is ZERO. It simply goes through all steps of the schedule
 
         ########STEP 3: SELECT RANDOMLY ANOTHER STATE (BETTER OR NOT)
         # Select 2 squares randomly within a 3x3unit
@@ -320,6 +322,22 @@ def simulated_annealing(values, printoutput=False):
 
     return current_state
 
+
+def random_initial_fill(values, printoutput=False):
+    """Random fill.
+    This algorithm will simply solve sudokus by doing a random fill with the 9 digits within each 3x3unit, respecting
+    the constraints determined by parse grid. It will not do anything else after the initial random fill."""
+
+    state = random_fill(values.copy())  # state initialization
+
+    if printoutput:
+        print("*** initial grid (hill climbing) ***")
+        display(state)
+        print("initial nb of conflicts", nb_conflicts(state))
+
+    return state
+
+
 def hill_climbing(values, printoutput=False):
     """Hill climbing algorithm. 
     The initial state has each square filled with one randomly chosen possible
@@ -339,7 +357,7 @@ def hill_climbing(values, printoutput=False):
     
     if conflicts == 0:   #solved!
         return state
-    
+
     while (True):
         max_improvement = 0
         a, b = None, None
@@ -479,7 +497,7 @@ def solve_all(grids, name='', showif=0.0):
         t = time.process_time() - start
         conflicts = 0
         # Keep a count of unresolved conflicts for hill-climbing method
-        if args.method in ['hc', 'sa']:
+        if args.method in ['hc', 'sa', 'rf']:
             conflicts = nb_conflicts(values)
         ## Display puzzles that take long enough
         if showif is not None and t > showif:
@@ -493,14 +511,19 @@ def solve_all(grids, name='', showif=0.0):
     
     N = len(grids)
     if N > 1:
-        print("Solved %d of %d %s puzzles within %.2f secs (avg %.2f secs (%d Hz), max %.2f secs). Method=%s" % (
+        print("Solved %d of %d %s puzzles within %.2f secs (avg %.3f secs (%d Hz), max %.3f secs). Method=%s" % (
             sum(results), N, name, sum(times), sum(times) / N, N / sum(times), max(times), args.method))
-        if args.method == "hc":
-            print("Number of conflicts remaining after solve attempt with Hill-Climbing: avg %.2f, min %i, max %i"%(
+        if args.method == "hc": # Hill-Climbing
+            print("Number of conflicts remaining after solve attempt with Hill-Climbing: avg %.3f, min %i, max %i"%(
                        sum(conflicts)/N, min(conflicts), max(conflicts)))
-        if args.method == "sa":
-            print("Number of conflicts remaining after solve attempt with Simulated Annealing: avg %.2f, min %i, max %i"%(
+        if args.method == "sa": # Simulated Annealing
+            print("Number of conflicts remaining after solve attempt with Simulated Annealing: avg %.3f, min %i, max %i"%(
                        sum(conflicts)/N, min(conflicts), max(conflicts)))
+        if args.method == "rf": # Random initial fill
+            print(
+                "Number of conflicts remaining after solve attempt with Random initial fill: avg %.3f, min %i, max %i" % (
+                    sum(conflicts) / N, min(conflicts), max(conflicts)))
+
 
 def solved(values):
     """A puzzle is solved if each unit is a permutation of the digits 1 to 9."""
@@ -538,7 +561,7 @@ if __name__ == '__main__':
                         choices=['random', 'norvig', 'naked_pairs'],
                         help='choice of heuristics fonction')
     parser.add_argument('method',
-                        choices=['dfs','hc', 'sa'],
+                        choices=['dfs','hc', 'sa', 'rf'],
                         default = 'dfs',
                         help='available methods are:\n-Depth-first-search with a choice of heuristic function;\n-Hill-climbing.')
     
@@ -563,21 +586,33 @@ if __name__ == '__main__':
     # print('--------------------  Test with one grid END  - HILL CLIMBING --------------------')
 
     print('--------------------  COMPARE THE 3 ALGORITHMS --------------------')
-    args = parser.parse_args(['dfs']) #for simulated annealing
+    args = parser.parse_args(['dfs']) #for brute force
     solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
-    args = parser.parse_args(['hc']) #for simulated annealing
+    args = parser.parse_args(['rf']) #for random initial fill
+    solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
+    args = parser.parse_args(['hc']) #for hill climbing
     solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
     args = parser.parse_args(['sa']) #for simulated annealing
     solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
 
     #args = parser.parse_args(['hc']) #for simulated annealing
     args = parser.parse_args(['sa']) #for simulated annealing
-
     # solve_all(from_file("MesSudokus/top95.txt      "), "top95     ", 9.0)
     # solve_all(from_file("MesSudokus/easy50.txt     "), "easy50    ", None)
     # solve_all(from_file("MesSudokus/hardest.txt    "), "hardest   ", None)
     # solve_all(from_file("MesSudokus/100sudoku.txt  "), "100sudoku ", None)
-    solve_all(from_file("MesSudokus/1000sudoku.txt "), "1000sudoku", None)
+
+    print('--------------------  COMPARE THE 3 ALGORITHMS --------------------')
+    args = parser.parse_args(['dfs']) #for brute force
+    solve_all(from_file("MesSudokus/1000sudoku.txt  "), "1000sudoku ", None)
+    args = parser.parse_args(['rf']) #for random initial fill
+    solve_all(from_file("MesSudokus/1000sudoku.txt  "), "1000sudoku ", None)
+    random_initial_fill
+    args = parser.parse_args(['hc']) #for hill climbing
+    solve_all(from_file("MesSudokus/1000sudoku.txt  "), "1000sudoku ", None)
+    args = parser.parse_args(['sa']) #for simulated annealing
+    solve_all(from_file("MesSudokus/1000sudoku.txt  "), "1000sudoku ", None)
+
 
 ## References used:
 ## http://www.scanraid.com/BasicStrategies.htm
