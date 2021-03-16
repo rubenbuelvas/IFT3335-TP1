@@ -422,35 +422,6 @@ def random_fill_unit(values, unit):
     return some(random_fill_unit(assign(values.copy(), s, d, unit),unit)
                                  for d in shuffled(values[s]))
 
-#another random_fill method implemented the 'dumb' way that doesn't improve on the other one
-def random_fill_unit2(values, unit):
-    #display(values)
-    result = values.copy()
-    remaining_digits = list(digits)
-    squares_to_assign = []
-    for s in unit:
-        if len(values[s]) == 1:
-            #print(values[s])
-            #print(digits_to_assign)
-            remaining_digits.remove(values[s])
-        else:
-            squares_to_assign.append(s)
-            
-    #until each square has a digit that respects its values constraints,
-    #put the remaining digits in random order and try to assign them to
-    #the squares whose values are not fixed. 
-    assigned = False
-    while(not assigned):
-        assigned = True
-        ds = shuffled(remaining_digits)
-        for i in range(len(ds)):
-            if ds[i] in values[squares_to_assign[i]]:
-                result[squares_to_assign[i]] = ds[i]
-            else:
-                assigned = False
-                break
-        
-    return(result)
             
 
 ################ Utilities ################
