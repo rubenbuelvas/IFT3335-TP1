@@ -3,7 +3,7 @@
 ## example use from commandline
 ##
 ## for constraint propagation
-## `python sudoku.py cp --heuristic [option]`
+## `python sudoku.py cp [--heuristic]`
 ## where option = ['random', 'norvig', 'naked_pairs', 'degree']
 ##
 ## for hill-climbing:
@@ -27,8 +27,6 @@
 ##   values is a dict of possible values, e.g. {'A1':'12349', 'A2':'8', ...}
 
 import argparse
-import copy
-import heapq as hq
 from itertools import combinations
 import math
 
@@ -108,8 +106,8 @@ def eliminate(values, s, d, unit=None):
     if a unit is specified, propagate within that unit only"""
     p = peers[s]
     units_to_check = units[s]
-    if unit:
-        p = [s2 for s2 in unit if s2 != s]
+    if unit: #if a unit was specified, propagate constraints only in that unit
+        p = [s2 for s2 in unit if s2 != s] #peers for s in the unit
         units_to_check = [unit]
     
     if d not in values[s]:
@@ -149,7 +147,7 @@ def display(values):
 ################ Search ################
 
 def solve(grid, printoutput=False, show_solution=False):
-
+    #choose the specified method to solve the grid
     if args.method == "hc":
         result = hill_climbing(parse_grid(grid), printoutput=printoutput)
     
@@ -256,7 +254,6 @@ linelist = unitlist[0:18]
 cols_rows = dict(zip(cols+rows, linelist)) #all row and column units
 
 
-iterations = []
 def hill_climbing(values, printoutput=False):
     """Hill climbing algorithm. 
     The initial state has each square filled with one randomly chosen possible
@@ -268,7 +265,7 @@ def hill_climbing(values, printoutput=False):
     constraints = values               #initial parsed grid serves as constraints
     state = random_fill(values.copy()) #state initialization
     conflicts = nb_conflicts(state)    #nb of conflicts in current state
-    all_pairs = get_all_pairs(constraints)
+    all_pairs = get_all_pairs(constraints) #swappable pairs
 
     if printoutput:
         print("constraints:")
@@ -276,15 +273,14 @@ def hill_climbing(values, printoutput=False):
         print("***initial grid***")
         display(state)
         print("initial nb of conflicts", nb_conflicts(state))
-    nb_iterations = 0
     while (True):
         
         # if no conflicts => sudoku is solved. otherwise keep improving state
         if conflicts == 0:
             break
-        nb_iterations += 1
+
         max_improvement = 0
-        a, b = None, None #best pair found for swap (for debug/demo purposes)
+        a, b = None, None #best pair found for swap
 
         for s1, s2 in all_pairs:
             #calculate improvement from swapping (s1, s2)
@@ -295,7 +291,7 @@ def hill_climbing(values, printoutput=False):
                 a, b = s1, s2
                    
         if max_improvement: #found improvement
-           
+            #swap pair and update number of conflicts
             conflicts -= max_improvement
             state[a], state[b] = state[b], state[a]
 
@@ -307,7 +303,6 @@ def hill_climbing(values, printoutput=False):
              
         else: #else there was no improvement from previous state
             break
-    iterations.append(nb_iterations)
     #algorithm ends if the sudoku is solved or when it can no longer improve score
     return state
 
@@ -348,8 +343,8 @@ def simulated_annealing(values, a=0.99, t=3.0, printoutput=False):
                       + f" Improvement = {improvement}")
                 display(solution)
                 print(f"number of conflicts left:\t {nb_conflicts(solution)}")
-                #decrease temperature at each iteration
-
+                
+        #decrease temperature at each iteration
         t *= a
 
     return solution
@@ -440,12 +435,15 @@ def random_fill(values, printoutput=False):
 
 
 def random_fill_unit(values, unit):
-    """fill a unit with random numbers, without conflict within that unit"""
+    """fill a unit with random numbers, without conflict within that unit. 
+    Note: this is similar to the 'search' method, except the constraint 
+    propagation is limited within the specified unit"""
     if values is False:
         return False
     
     if all(len(values[s]) == 1 for s in unit):
         return values #unit is filled
+    #choose a square to assign a digit to
     #s = random.choice([s for s in unit if len(values[s]) > 1])
     n,s = min([(len(values[s]), s) for s in unit if len(values[s]) > 1])
         
@@ -558,7 +556,6 @@ hard1 = '.....6....59.....82....8....45........3........6..3.54...325..6........
 
 
 def demo(grid=grid2):
-    
     # Local test with display
     print('-------------------- Test with one grid START --------------------')
     #values = solve(grid3, True) # Quick test with grid almost complete
@@ -574,8 +571,6 @@ def benchmarks():
     #solve_all(from_file("MesSudokus/100sudoku.txt"), "100sudoku ", args.showif)
     solve_all(from_file("MesSudokus/1000sudoku.txt"), "1000sudoku", args.showif)
     #solve_all([random_puzzle() for _ in range(100)], "random    ", args.showif)
-    #print("nb of grids solved without iterations in hc: ",
-    #      sum([1 for i in iterations if i == 0]))
 
 
 def test_temps():
@@ -588,6 +583,7 @@ def test_temps():
 if __name__ == '__main__':
     random.seed(10)
     test()
+    
     #command line arguments and options 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument(
@@ -603,10 +599,11 @@ if __name__ == '__main__':
         + "-rf: randomly filling a grid as in the first step of\n"
         + " hill-climbing and simulated annealing")
 
-    parser.add_argument('sudoku', nargs='?', type=str, help="A string representing a sudoku "
-                        + "problem instance, where\nthe unknown values are either "
-                        + "'.' or '0'.\nExample:2000600000070040860000013000000000"
-                        + "400900000004\n80000710900078000000050002020600501")
+    parser.add_argument('sudoku', nargs='?', type=str,
+                        help="A string representing a sudoku problem instance, where\n"
+                        + "the unknown values are either '.' or '0'.\n"
+                        + "Example:2000600000070040860000013000000000400900000004\n"
+                        + "80000710900078000000050002020600501" )
     
     parser.add_argument('--file', type=argparse.FileType('r'),
                         help="run the algorithm on all instances in the specified file")
@@ -662,5 +659,4 @@ if __name__ == '__main__':
 ## http://www.sudokudragon.com/sudokustrategy.htm
 ## http://www.krazydad.com/blog/2005/09/29/an-index-of-sudoku-strategies/
 ## http://www2.warwick.ac.uk/fac/sci/moac/currentstudents/peter_cock/python/sudoku/
-## Rosenschein, J. Introduction to Artificial Intelligence, The Hebrew University of
-## Jerusalem https://www.cs.huji.ac.il/~ai/projects/2017/csp/Sudoku_2/files/paper.pdf
+## https://towardsdatascience.com/solving-sudoku-with-ai-d6008993c7de
