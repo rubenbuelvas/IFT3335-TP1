@@ -2,9 +2,9 @@
 
 ## example use from commandline
 ##
-## for depth-first-search:
-## `python sudoku.py dfs --heuristic [option]`
-## where option = ['random', 'norvig', 'naked_pairs']
+## for constraint propagation
+## `python sudoku.py cp --heuristic [option]`
+## where option = ['random', 'norvig', 'naked_pairs', 'degree']
 ##
 ## for hill-climbing:
 ## `python sudoku.py hc`
@@ -156,7 +156,7 @@ def solve(grid, printoutput=False, show_solution=False):
     elif args.method == "sa":
         result = simulated_annealing(parse_grid(grid), printoutput=printoutput)
     
-    elif args.method == "dfs":
+    elif args.method == "cp":
         result = search(parse_grid(grid))
     
     elif args.method == "rf":
@@ -487,7 +487,7 @@ def solve_all(grids, name='', showif=0.0):
     When showif is None, don't display any puzzles."""
 
     method_descriptions = {'hc' : 'Hill-Climbing',
-                               'dfs' : 'Backtracking',
+                               'cp' : 'Constraint Propagation',
                                'sa' : 'Simulated Annealing',
                                'rf' : 'randomly filling after parsing the grid'}
 
@@ -514,7 +514,7 @@ def solve_all(grids, name='', showif=0.0):
     if N > 1:
         
         print(f"* Method: {method_descriptions[args.method]} *")
-        if args.method == 'dfs':
+        if args.method == 'cp':
             print(f'Heuristic: {args.heuristic}')
         print("Solved %d of %d %s puzzles within %.2f secs (avg %.2f secs (%d Hz), max %.2f secs)." % (
             sum(results), N, name, sum(times), sum(times) / N, N / sum(times),
@@ -568,12 +568,12 @@ def demo(grid=grid2):
 
 
 def benchmarks():
-    solve_all(from_file("./MesSudokus/top95.txt"),    "   top95   ", args.showif)
-    solve_all(from_file("MesSudokus/easy50.txt"),     "  easy50   ", args.showif)
-    solve_all(from_file("MesSudokus/hardest.txt"),    "  hardest  ", args.showif)
+    #solve_all(from_file("./MesSudokus/top95.txt"),    "   top95   ", args.showif)
+    #solve_all(from_file("MesSudokus/easy50.txt"),     "  easy50   ", args.showif)
+    #solve_all(from_file("MesSudokus/hardest.txt"),    "  hardest  ", args.showif)
     solve_all(from_file("MesSudokus/100sudoku.txt"),  " 100sudoku ", args.showif)
     #solve_all(from_file("MesSudokus/1000sudoku.txt"), "1000sudoku ", args.showif)
-    solve_all([random_puzzle() for _ in range(100)],  "   random  ",  args.showif)
+    #solve_all([random_puzzle() for _ in range(100)],  "   random  ",  args.showif)
 
         
 if __name__ == '__main__':
@@ -582,11 +582,13 @@ if __name__ == '__main__':
     #command line arguments and options 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('method',
-                        choices=['dfs','hc','sa','rf'],
-                        default = 'dfs',
+                        choices=['cp','hc','sa','rf'],
+                        default = 'cp',
                         help='Available methods are:\n\
-                        -Depth-first-search with a choice of heuristic function;\n\
-                        -Hill-climbing.')
+                        -cp: Constraint Propagation with an option of heuristic function;\n\
+                        -hc: Hill-climbing;\n\
+                        -sa: Simulated Annealing with options for initial temperature and cooling schedule alpha;\n\
+                        -rf: randomly filling a grid as in the first step of hill-climbing and simulated annealing')
     
     parser.add_argument('sudoku', nargs='?', type=str, help="A string representing a sudoku "
                         + "problem instance, where\nthe unknown values are either "
@@ -614,7 +616,7 @@ if __name__ == '__main__':
 
     #simulate commandline arguments 
     #args = parser.parse_args(['hc']) #for hill climbing
-    #args = parser.parse_args(['dfs', '--heuristic', 'naked_pairs']) # for dfs, norvig
+    #args = parser.parse_args(['cp', '--heuristic', 'naked_pairs']) # for constraint propagation, norvig
     #args = parser.parse_args(['sa']) #for simulated annealing
     
     if args.file:
@@ -631,8 +633,6 @@ if __name__ == '__main__':
     if args.benchmarks:
         benchmarks()
 
-    
-        
     
 
 ## References used:
