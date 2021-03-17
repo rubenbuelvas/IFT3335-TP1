@@ -151,7 +151,7 @@ def display(values):
 def solve(grid, printoutput=False, show_solution=False):
 
     if args.method == "hc":
-        result = hill_climbing(parse_grid(grid), printoutput)
+        result = hill_climbing(parse_grid(grid), printoutput=printoutput)
     
     elif args.method == "sa":
         result = simulated_annealing(parse_grid(grid), printoutput=printoutput)
@@ -551,7 +551,8 @@ def random_puzzle(N=17):
 
 grid1 = '003020600900305001001806400008102900700000008006708200002609500800203009005010300'
 grid2 = '4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......'
-grid3 = '4..27.6..798156234.2.84...7237468951849531726561792843.82.15479.7..243....4.87..2' #Easy grid to test
+# grid3 = Easy grid to test
+grid3 = '4..27.6..798156234.2.84...7237468951849531726561792843.82.15479.7..243....4.87..2' 
 hard1 = '.....6....59.....82....8....45........3........6..3.54...325..6..................'
 
 
@@ -567,56 +568,79 @@ def demo(grid=grid2):
 
 
 def benchmarks():
-    #solve_all(from_file("./MesSudokus/top95.txt"),    "   top95   ", args.showif)
-    #solve_all(from_file("MesSudokus/easy50.txt"),     "  easy50   ", args.showif)
-    #solve_all(from_file("MesSudokus/hardest.txt"),    "  hardest  ", args.showif)
-    solve_all(from_file("MesSudokus/100sudoku.txt"),  " 100sudoku ", args.showif)
-    #solve_all(from_file("MesSudokus/1000sudoku.txt"), "1000sudoku ", args.showif)
-    #solve_all([random_puzzle() for _ in range(100)],  "   random  ",  args.showif)
+    #solve_all(from_file("MesSudokus/top95.txt"),     "top95     ", args.showif)
+    #solve_all(from_file("MesSudokus/easy50.txt"),    "easy50    ", args.showif)
+    #solve_all(from_file("MesSudokus/hardest.txt"),   "hardest   ", args.showif)
+    #solve_all(from_file("MesSudokus/100sudoku.txt"), "100sudoku ", args.showif)
+    solve_all(from_file("MesSudokus/1000sudoku.txt"), "1000sudoku", args.showif)
+    #solve_all([random_puzzle() for _ in range(100)], "random    ", args.showif)
+    #print("nb of grids solved without iterations in hc: ",
+    #      sum([1 for i in iterations if i == 0]))
 
-        
+
+def test_temps():
+    for i in range(2, 30, 2):
+        args.t = i/10.0
+        print("T = ",args.t)
+        solve_all(from_file("MesSudokus/1000sudoku.txt"), "1000sudoku ", args.showif)
+   
+
 if __name__ == '__main__':
     random.seed(10)
     test()
     #command line arguments and options 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('method',
-                        choices=['cp','hc','sa','rf'],
-                        default = 'cp',
-                        help='Available methods are:\n\
-                        -cp: Constraint Propagation with an option of heuristic function;\n\
-                        -hc: Hill-climbing;\n\
-                        -sa: Simulated Annealing with options for initial temperature and cooling schedule alpha;\n\
-                        -rf: randomly filling a grid as in the first step of hill-climbing and simulated annealing')
-    
+    parser.add_argument(
+        'method',
+        choices=['cp','hc','sa','rf'],
+        default = 'cp',
+        help="Available methods are:\n"
+        + "-cp: Constraint Propagation with an option of heuristic\n"
+        + "function;\n"
+        + "-hc: Hill-climbing;\n"
+        + "-sa: Simulated Annealing with options for initial \n"
+        + "temperature\n and cooling schedule alpha;\n"
+        + "-rf: randomly filling a grid as in the first step of\n"
+        + " hill-climbing and simulated annealing")
+
     parser.add_argument('sudoku', nargs='?', type=str, help="A string representing a sudoku "
                         + "problem instance, where\nthe unknown values are either "
                         + "'.' or '0'.\nExample:2000600000070040860000013000000000"
                         + "400900000004\n80000710900078000000050002020600501")
     
+    parser.add_argument('--file', type=argparse.FileType('r'),
+                        help="run the algorithm on all instances in the specified file")
+    
     parser.add_argument('--heuristic',
                         default='random',
                         choices=['random', 'norvig', 'naked_pairs', 'degree'],
-                        help='choice of heuristics fonction')
+                        help='Choice of heuristics fonction')
 
-    parser.add_argument('--alpha', type=float, help="To specify the value of the "
-                        + "cooling schedule alpha\nwhen the simulated annealing "
-                        + "method is chosen. \nDefault = 0.99")
+    parser.add_argument('--alpha', type=float,
+                        help="To specify the value of the cooling schedule alpha\n"
+                        + "when the simulated annealing method is chosen. \n"
+                        + "Default = 0.99")
     parser.add_argument('--t', type=float, help="To specify the initial temperature"
-                        + " when the simulated\nannealing algorithm is chosen.\n"
+                        + "when the simulated\nannealing algorithm is chosen.\n"
                         + "Default = 3.0")
-    parser.add_argument('--demo', action='store_true')
-    parser.add_argument('--benchmarks', action='store_true')
-    parser.add_argument('--file', type=argparse.FileType('r'))
-    
-   
-    parser.add_argument('--showif', type=float, default=None)
+    parser.add_argument('--demo', action='store_true',
+                        help="For some search methods, will show the intermediate steps\n"
+                        +"taken during the solving of a problem")
+    parser.add_argument('--benchmarks', action='store_true',
+                        help="Will run the benchmarks() method which will run the\n"
+                        + "algorithm on problems from several files in folder MesSudokus")
+
+    parser.add_argument('--showif', type=float, default=None,
+                        help="When solving several problems, will show the grids that\n"
+                        + "take longer than the specified amount of time to solve")
     args = parser.parse_args()
 
-    #simulate commandline arguments 
+    #simulate commandline arguments for testing
     #args = parser.parse_args(['hc']) #for hill climbing
-    #args = parser.parse_args(['cp', '--heuristic', 'naked_pairs']) # for constraint propagation, norvig
+    #args = parser.parse_args(['cp', '--heuristic', 'naked_pairs']) #constraint propag., norvig
     #args = parser.parse_args(['sa']) #for simulated annealing
+
+    #test_temps()
     
     if args.file:
         solve_all(args.file.read().strip().split('\n'), "sudoku", args.showif)
@@ -632,7 +656,6 @@ if __name__ == '__main__':
     if args.benchmarks:
         benchmarks()
 
-    
 
 ## References used:
 ## http://www.scanraid.com/BasicStrategies.htm
