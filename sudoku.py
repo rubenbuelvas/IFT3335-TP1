@@ -189,11 +189,11 @@ def search(values):
     #else raise ValueError
 
     # try possible numbers for s in random order
-    return some(search(assign(values.copy(), s, d))
-                for d in shuffled(values[s]))
-
     #return some(search(assign(values.copy(), s, d))
-                #for d in values[s])
+                #for d in shuffled(values[s]))
+
+    return some(search(assign(values.copy(), s, d))
+                for d in values[s])
 
 
 def random_square(values):
@@ -214,42 +214,39 @@ def naked_pairs(values):
     """choose a square belonging to naked pairs.
     If no naked pairs are found, use norvig"""
     #all squares having two candidate digits
-    two_digits = {s:d for s,d in values.items() if len(d) == 2}
+    two_digits = {s:ds for s,ds in values.items() if len(ds) == 2}
     while(two_digits):
         #pick a square. if any of its peers has the same 2 digits, it's a naked pair
-        s,d = two_digits.popitem()
-        if any({k:v for k,v in two_digits.items() if v==d and k in peers[s]}) :
-            return s 
+        s,ds = two_digits.popitem()
+        if any({k:v for k,v in two_digits.items() if v==ds and k in peers[s]}) :
+            return s
+  
     return norvig(values)
+
 
 
 def most_impactful_min(values):
     """Degree heuristic.
     When there is a tiebreaker between squares for minimum possible values, 
     choose the one for which assigning a value will impact the most neighbours"""
-    candidates = [] #candidate squares to return
-
-    #order square by their number of possible values with heapqueue
-    value_key = [(len(values[s]),s) for s in squares if len(values[s]) > 1]
-    hq.heapify(value_key)
-
-    #head of the heap is the minimum. Add it to list of candidates
-    minimum = hq.heappop(value_key)
-    candidates.append(minimum[1])
-
-    #find all others that have the same minimum number of possible values
-    while(value_key):
-        head = hq.heappop(value_key)
-        if head[0] == minimum[0]:
-            candidates.append(head[1])
-        else:
-            break 
-
-    #choose the square among candidates that has the most number of non-fixed peers 
-    n,s = max((len([p for p in peers[s] if len(values[p]) > 1]),s)
-                  for s in candidates)
-
+    #choose the square among candidates that has the most number of non-fixed peers
+    n,s = max((len([p for p in peers[s] if len(values[p]) > 1]), s)
+                  for s in find_minimums(values))
     return s
+
+
+def find_minimums(values):
+    """return a list of squares having the minimum number of possible values"""
+    mins = []
+    min = 10
+    for s in squares:
+        n = len(values[s])
+        if n == min:
+            mins.append(s)
+        elif n != 1 and n < min:
+            mins = [s]
+            min = n
+    return mins
     
     
 ################ Hill Climbing ################
@@ -319,6 +316,8 @@ def hill_climbing(values, printoutput=False):
 def simulated_annealing(values, a=0.99, t=3.0, printoutput=False):
     if args.t:
         t = args.t
+    if args.alpha:
+        a = args.alpha
 
     solution = random_fill(values.copy()) #state initialization
     conflicts = nb_conflicts(solution)    #nb of conflicts in current state
